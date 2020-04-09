@@ -873,151 +873,151 @@ html.Div([
   style={'marginbottom':'25px','padding':'1%'}
   ),
   html.Div([
+    html.Div([
+      html.Div([
         html.Div([
-            html.Div([
-              html.Div([
-                html.P('Cases:', 
-                  style={'color':'#696969', 'font-size': '1rem'}
-                  ),
-                html.P('{}'.format(f'{uk_sum["TotalUKCases"][0]:,}'), 
-                  style={'font-size': '1.5rem'}
-                  )
-                ],
-                #id='cases', 
-                className='four columns',
-                style={'background-color':'#F5F5F5','padding':'1%', 'border-radius': '5px','box-shadow': '2px 2px 2px lightgrey','margin':'0.5%'}
-                ),
-              html.Div([
-                html.P('Deaths:', 
-                  style={'color':'#696969','font-size': '1rem'}
-                  ),
-                html.P('{}'.format(f'{uk_sum["TotalUKDeaths"][0]:,}'), 
-                  style={'font-size': '1.5rem'}
-                  )
-                ],
-                #id='deaths',
-                className='four columns',
-                style={'background-color':'#F5F5F5','padding':'1%', 'border-radius': '5px','box-shadow': '2px 2px 2px lightgrey','margin':'0.5%'}
-                ),
-              html.Div([
-                html.P('Avg mortality:', 
-                  style={'color':'#696969','font-size': '1rem'}
-                  ),
-                html.P('{} % '.format(round(100*uk_sum["TotalUKDeaths"][0]/uk_sum["TotalUKCases"][0],2)), 
-                  style={'font-size': '1.5rem'}
-                  )
-                ], 
-                #id='mort',
-                className='four columns',
-                style={'background-color':'#F5F5F5','padding':'1%','border-radius': '5px','box-shadow': '2px 2px 2px lightgrey','margin':'0.5%'}
-                ),
-              ],
-              #id="info-container", 
-              className='row', 
-              #style={'padding':'2%'}
-              ),
-            html.Div([
-              html.Div([
-                html.Div([
-                  html.P('Statistics by local authority',
-                    style={'margin-bottom':'0', 'paddingBottom':'0','font-size': '1.5rem'}),
-                  html.P('Click for detail',
-                    style={'color':'#696969','font-size': '1rem', 'font-style':'italic'})
-                  ], className='eight columns'
-                  ),
-                html.Div([
-                  dcc.RadioItems(
-                      id="uom-uk-map",
-                      options=[
-                      {'label': 'Absolute', 'value': 'Abs'},
-                      {'label': 'per 100k pop.', 'value': 'per100k'}],
-                      value='Abs',
-                      labelStyle={'display': 'inline-block'},
-                  style={'font-size': '1rem'},
-                  ),
-                  ], className='four columns'
-                  ),
-                ], className='row'),
-                dcc.Graph(id= "UK map",figure = fig6)
-                ],
-                className='row flex-display',
-                style={'padding':'1.5%'}
-                ),
-            ],
-            className='seven columns flex-display',
-            style={'margin':'0','padding': '2%'}
+          html.P('Cases:', 
+            style={'color':'#696969', 'font-size': '1rem'}
             ),
-        html.Div([
-          html.Div([
-            html.Div([
-              html.Div([
-                html.P('Worst-hit local authorities',
-                  className='eight columns',
-                  style={'font-size': '1.5rem'}),
-                html.Div([
-                  dcc.RadioItems(
-                    id="uom-area-cases",
-                    options=[
-                    {'label': 'Absolute', 'value': 'Abs'},
-                    {'label': 'per 100k pop.', 'value': 'per100k'}],
-                    value='Abs',
-                    labelStyle={'display': 'inline-block'},
-                    style={'font-size': '1rem'},
-                    ),
-                  ],
-                  className='four columns'
-                  )
-                ],
-                className='row'
-                ),
-              dcc.Graph(id='area-cases', figure=fig10,
-                style={'margin':'0%','padding': '2%'}
-                #responsive=True,
-                #className='pretty_container'
-                )
-              ], 
-              className='twelve columns',
-              style={'margin':'0', 'padding': '2%'},
-              ),
-            html.Div([
-              html.Div([
-                html.P('Summary by country',
-                  className='eight columns',
-                  style={'font-size': '1.5rem'}),
-                html.Div([
-                  dcc.RadioItems(
-                    id="uom-uk-cases",
-                    options=[
-                    {'label': 'Absolute', 'value': 'Abs'},
-                    {'label': 'per 100k pop.', 'value': 'per100k'}],
-                    value='Abs',
-                    labelStyle={'display': 'inline-block'},
-                    style={'font-size': '1rem'},
-                    ),
-                  ],
-                  className='four columns'
-                  )
-                ],
-                className='row'
-                ),
-              dcc.Graph(id='uk-cases', figure=fig9,
-                style={'margin':'0%','padding': '2%'}
-                #responsive=True,
-                #className='pretty_container'
-                ),
-              ], 
-              className="twelve columns",
-              style={'margin':'0','padding': '2%'},
-              ),
-              ], 
-              className='row')
+          html.P('{}'.format(f'{uk_sum["TotalUKCases"][0]:,}'), 
+            style={'font-size': '1.5rem'}
+            )
           ],
-          className='five columns flex-display',
-          style={'margin':'0','padding': '2%'}
+          #id='cases', 
+          className='four columns',
+          style={'background-color':'#F5F5F5','padding':'1%', 'border-radius': '5px','box-shadow': '2px 2px 2px lightgrey','margin':'0.5%'}
+          ),
+        html.Div([
+          html.P('Deaths:', 
+            style={'color':'#696969','font-size': '1rem'}
+            ),
+          html.P('{}'.format(f'{uk_sum["TotalUKDeaths"][0]:,}'), 
+            style={'font-size': '1.5rem'}
+            )
+          ],
+          #id='deaths',
+          className='four columns',
+          style={'background-color':'#F5F5F5','padding':'1%', 'border-radius': '5px','box-shadow': '2px 2px 2px lightgrey','margin':'0.5%'}
+          ),
+        html.Div([
+          html.P('Avg mortality:', 
+            style={'color':'#696969','font-size': '1rem'}
+            ),
+          html.P('{} % '.format(round(100*uk_sum["TotalUKDeaths"][0]/uk_sum["TotalUKCases"][0],2)), 
+            style={'font-size': '1.5rem'}
+            )
+          ], 
+          #id='mort',
+          className='four columns',
+          style={'background-color':'#F5F5F5','padding':'1%','border-radius': '5px','box-shadow': '2px 2px 2px lightgrey','margin':'0.5%'}
           ),
         ],
-        className='row flex-display'
+        #id="info-container", 
+        className='row', 
+        #style={'padding':'2%'}
         ),
+      html.Div([
+        html.Div([
+          html.Div([
+            html.P('Statistics by local authority',
+              style={'margin-bottom':'0', 'paddingBottom':'0','font-size': '1.5rem'}),
+            html.P('Click for detail',
+              style={'color':'#696969','font-size': '1rem', 'font-style':'italic'})
+            ], className='eight columns'
+            ),
+          html.Div([
+            dcc.RadioItems(
+                id="uom-uk-map",
+                options=[
+                {'label': 'Absolute', 'value': 'Abs'},
+                {'label': 'per 100k pop.', 'value': 'per100k'}],
+                value='Abs',
+                labelStyle={'display': 'inline-block'},
+            style={'font-size': '1rem'},
+            ),
+            ], className='four columns'
+            ),
+          ], className='row'),
+          dcc.Graph(id= "UK map",figure = fig6)
+          ],
+          className='row flex-display',
+          style={'padding':'1.5%'}
+          ),
+        ],
+        className='seven columns flex-display',
+        style={'margin':'0','padding': '2%'}
+        ),
+    html.Div([
+      html.Div([
+        html.Div([
+          html.Div([
+            html.P('Worst-hit local authorities',
+              className='eight columns',
+              style={'font-size': '1.5rem'}),
+            html.Div([
+              dcc.RadioItems(
+                id="uom-area-cases",
+                options=[
+                {'label': 'Absolute', 'value': 'Abs'},
+                {'label': 'per 100k pop.', 'value': 'per100k'}],
+                value='Abs',
+                labelStyle={'display': 'inline-block'},
+                style={'font-size': '1rem'},
+                ),
+              ],
+              className='four columns'
+              )
+            ],
+            className='row'
+            ),
+          dcc.Graph(id='area-cases', figure=fig10,
+            style={'margin':'0%','padding': '2%'}
+            #responsive=True,
+            #className='pretty_container'
+            )
+          ], 
+          className='twelve columns',
+          style={'margin':'0', 'padding': '2%'},
+          ),
+        html.Div([
+          html.Div([
+            html.P('Summary by country',
+              className='eight columns',
+              style={'font-size': '1.5rem'}),
+            html.Div([
+              dcc.RadioItems(
+                id="uom-uk-cases",
+                options=[
+                {'label': 'Absolute', 'value': 'Abs'},
+                {'label': 'per 100k pop.', 'value': 'per100k'}],
+                value='Abs',
+                labelStyle={'display': 'inline-block'},
+                style={'font-size': '1rem'},
+                ),
+              ],
+              className='four columns'
+              )
+            ],
+            className='row'
+            ),
+          dcc.Graph(id='uk-cases', figure=fig9,
+            style={'margin':'0%','padding': '2%'}
+            #responsive=True,
+            #className='pretty_container'
+            ),
+          ], 
+          className="twelve columns",
+          style={'margin':'0','padding': '2%'},
+          ),
+          ], 
+          className='row')
+      ],
+      className='five columns flex-display',
+      style={'margin':'0','padding': '2%'}
+      ),
+    ],
+    className='row flex-display'
+    ),
 ],
 style={"display": "flex", "flex-direction": "column"}
 )
