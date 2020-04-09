@@ -1,0 +1,431 @@
+,ReportingArea,All ages
+0,UNITED KINGDOM,66435550
+1,GREAT BRITAIN,64553909
+2,ENGLAND AND WALES,59115809
+3,ENGLAND,55977178
+4,NORTH EAST,2657909
+5,County Durham,526980
+6,Darlington,106566
+7,Hartlepool,93242
+8,Middlesbrough,140545
+9,Northumberland,320274
+10,Redcar and Cleveland,136718
+11,Stockton-on-Tees,197213
+12,Tyne and Wear (Met County),1136371
+13,Gateshead,202508
+14,Newcastle upon Tyne,300196
+15,North Tyneside,205985
+16,South Tyneside,150265
+17,Sunderland,277417
+18,NORTH WEST,7292093
+19,Blackburn with Darwen,148942
+20,Blackpool,139305
+21,Cheshire East,380790
+22,Cheshire West and Chester,340502
+23,Halton,128432
+24,Warrington,209547
+25,Cumbria,498888
+26,Allerdale,97527
+27,Barrow-in-Furness,67137
+28,Carlisle,108387
+29,Copeland,68424
+30,Eden,52881
+31,South Lakeland,104532
+32,Greater Manchester (Met County),2812569
+33,Bolton,285372
+34,Bury,190108
+35,Manchester,547627
+36,Oldham,235623
+37,Rochdale,220001
+38,Salford,254408
+39,Stockport,291775
+40,Tameside,225197
+41,Trafford,236370
+42,Wigan,326088
+43,Lancashire,1210053
+44,Burnley,88527
+45,Chorley,116821
+46,Fylde,79770
+47,Hyndburn,80815
+48,Lancaster,144246
+49,Pendle,91405
+50,Preston,141818
+51,Ribble Valley,60057
+52,Rossendale,70895
+53,South Ribble,110527
+54,West Lancashire,113949
+55,Wyre,111223
+56,Merseyside (Met County),1423065
+57,Knowsley,149571
+58,Liverpool,494814
+59,Sefton,275396
+60,St. Helens,180049
+61,Wirral,323235
+62,YORKSHIRE AND THE HUMBER,5479615
+63,East Riding of Yorkshire,339614
+64,"Kingston upon Hull, City of",260645
+65,North East Lincolnshire,159821
+66,North Lincolnshire,172005
+67,York,209893
+68,North Yorkshire,614505
+69,Craven,56832
+70,Hambleton,91134
+71,Harrogate,160533
+72,Richmondshire,53244
+73,Ryedale,54920
+74,Scarborough,108736
+75,Selby,89106
+76,South Yorkshire (Met County),1402918
+77,Barnsley,245199
+78,Doncaster,310542
+79,Rotherham,264671
+80,Sheffield,582506
+81,West Yorkshire (Met County),2320214
+82,Bradford,537173
+83,Calderdale,210082
+84,Kirklees,438727
+85,Leeds,789194
+86,Wakefield,345038
+87,EAST MIDLANDS,4804149
+88,Derby,257174
+89,Leicester,355218
+90,Nottingham,331069
+91,Rutland,39697
+92,Derbyshire,796142
+93,Amber Valley,126678
+94,Bolsover,79530
+95,Chesterfield,104628
+96,Derbyshire Dales,71977
+97,Erewash,115490
+98,High Peak,92221
+99,North East Derbyshire,101125
+100,South Derbyshire,104493
+101,Leicestershire,698268
+102,Blaby,100421
+103,Charnwood,182643
+104,Harborough,92499
+105,Hinckley and Bosworth,112423
+106,Melton,51100
+107,North West Leicestershire,102126
+108,Oadby and Wigston,57056
+109,Lincolnshire,755833
+110,Boston,69366
+111,East Lindsey,140741
+112,Lincoln,99039
+113,North Kesteven,115985
+114,South Holland,93980
+115,South Kesteven,141853
+116,West Lindsey,94869
+117,Northamptonshire,747622
+118,Corby,70827
+119,Daventry,84484
+120,East Northamptonshire,93906
+121,Kettering,101266
+122,Northampton,225146
+123,South Northamptonshire,92515
+124,Wellingborough,79478
+125,Nottinghamshire,823126
+126,Ashfield,127151
+127,Bassetlaw,116839
+128,Broxtowe,113272
+129,Gedling,117786
+130,Mansfield,108841
+131,Newark and Sherwood,121566
+132,Rushcliffe,117671
+133,WEST MIDLANDS,5900757
+134,"Herefordshire, County of",192107
+135,Shropshire,320274
+136,Stoke-on-Trent,255833
+137,Telford and Wrekin,177799
+138,Staffordshire,875219
+139,Cannock Chase,100109
+140,East Staffordshire,118574
+141,Lichfield,103965
+142,Newcastle-under-Lyme,129490
+143,South Staffordshire,112126
+144,Stafford,135880
+145,Staffordshire Moorlands,98397
+146,Tamworth,76678
+147,Warwickshire,571010
+148,North Warwickshire,64850
+149,Nuneaton and Bedworth,128902
+150,Rugby,107194
+151,Stratford-on-Avon,127580
+152,Warwick,142484
+153,West Midlands (Met County),2916458
+154,Birmingham,1141374
+155,Coventry,366785
+156,Dudley,320626
+157,Sandwell,327378
+158,Solihull,214909
+159,Walsall,283378
+160,Wolverhampton,262008
+161,Worcestershire,592057
+162,Bromsgrove,98662
+163,Malvern Hills,78113
+164,Redditch,84989
+165,Worcester,101891
+166,Wychavon,127340
+167,Wyre Forest,101062
+168,EAST,6201214
+169,Bedford,171623
+170,Central Bedfordshire,283606
+171,Luton,214109
+172,Peterborough,201041
+173,Southend-on-Sea,182463
+174,Thurrock,172525
+175,Cambridgeshire,651482
+176,Cambridge,125758
+177,East Cambridgeshire,89362
+178,Fenland,101491
+179,Huntingdonshire,177352
+180,South Cambridgeshire,157519
+181,Essex,1477764
+182,Basildon,185862
+183,Braintree,151561
+184,Brentwood,76550
+185,Castle Point,90070
+186,Chelmsford,177079
+187,Colchester,192523
+188,Epping Forest,131137
+189,Harlow,86594
+190,Maldon,64425
+191,Rochford,86981
+192,Tendring,145803
+193,Uttlesford,89179
+194,Hertfordshire,1184365
+195,Broxbourne,96876
+196,Dacorum,154280
+197,East Hertfordshire,148105
+198,Hertsmere,104205
+199,North Hertfordshire,133214
+200,St Albans,147373
+201,Stevenage,87754
+202,Three Rivers,93045
+203,Watford,96767
+204,Welwyn Hatfield,122746
+205,Norfolk,903680
+206,Breckland,139329
+207,Broadland,129464
+208,Great Yarmouth,99370
+209,King's Lynn and West Norfolk,151811
+210,North Norfolk,104552
+211,Norwich,141137
+212,South Norfolk,138017
+213,Suffolk,758556
+214,Babergh,91401
+215,East Suffolk,248249
+216,Ipswich,137532
+217,Mid Suffolk,102493
+218,West Suffolk,178881
+219,LONDON,8908081
+220,Camden,262226
+221,City of London,8706
+222,Hackney,279665
+223,Hammersmith and Fulham,185426
+224,Haringey,270624
+225,Islington,239142
+226,Kensington and Chelsea,156197
+227,Lambeth,325917
+228,Lewisham,303536
+229,Newham,352005
+230,Southwark,317256
+231,Tower Hamlets,317705
+232,Wandsworth,326474
+233,Westminster,255324
+234,Barking and Dagenham,211998
+235,Barnet,392140
+236,Bexley,247258
+237,Brent,330795
+238,Bromley,331096
+239,Croydon,385346
+240,Ealing,341982
+241,Enfield,333869
+242,Greenwich,286186
+243,Harrow,250149
+244,Havering,257810
+245,Hillingdon,304824
+246,Hounslow,270782
+247,Kingston upon Thames,175470
+248,Merton,206186
+249,Redbridge,303858
+250,Richmond upon Thames,196904
+251,Sutton,204525
+252,Waltham Forest,276700
+253,SOUTH EAST,9133625
+254,Bracknell Forest,121676
+255,Brighton and Hove,290395
+256,Isle of Wight,141538
+257,Medway,277855
+258,Milton Keynes,268607
+259,Portsmouth,215133
+260,Reading,163203
+261,Slough,149112
+262,Southampton,252796
+263,West Berkshire,158527
+264,Windsor and Maidenhead,150906
+265,Wokingham,167979
+266,Buckinghamshire,540059
+267,Aylesbury Vale,199448
+268,Chiltern,95927
+269,South Bucks,70043
+270,Wycombe,174641
+271,East Sussex,554590
+272,Eastbourne,103160
+273,Hastings,92855
+274,Lewes,102744
+275,Rother,95656
+276,Wealden,160175
+277,Hampshire,1376316
+278,Basingstoke and Deane,175729
+279,East Hampshire,120681
+280,Eastleigh,131819
+281,Fareham,116339
+282,Gosport,85283
+283,Hart,96293
+284,Havant,125813
+285,New Forest,179753
+286,Rushmoor,95142
+287,Test Valley,125169
+288,Winchester,124295
+289,Kent,1568623
+290,Ashford,129281
+291,Canterbury,164553
+292,Dartford,109709
+293,Dover,116969
+294,Folkestone and Hythe,112578
+295,Gravesham,106385
+296,Maidstone,169955
+297,Sevenoaks,120293
+298,Swale,148519
+299,Thanet,141819
+300,Tonbridge and Malling,130508
+301,Tunbridge Wells,118054
+302,Oxfordshire,687524
+303,Cherwell,149161
+304,Oxford,154327
+305,South Oxfordshire,140504
+306,Vale of White Horse,133732
+307,West Oxfordshire,109800
+308,Surrey,1189934
+309,Elmbridge,136626
+310,Epsom and Ewell,79928
+311,Guildford,147889
+312,Mole Valley,87253
+313,Reigate and Banstead,147757
+314,Runnymede,88000
+315,Spelthorne,99334
+316,Surrey Heath,88874
+317,Tandridge,87496
+318,Waverley,125610
+319,Woking,101167
+320,West Sussex,858852
+321,Adur,63869
+322,Arun,159827
+323,Chichester,120750
+324,Crawley,112448
+325,Horsham,142217
+326,Mid Sussex,149716
+327,Worthing,110025
+328,SOUTH WEST,5599735
+329,Bath and North East Somerset,192106
+330,"Bournemouth, Christchurch and Poole",395784
+331,"Bristol, City of",463405
+332,Cornwall,565968
+333,Dorset,376484
+334,Isles of Scilly,2242
+335,North Somerset,213919
+336,Plymouth,263100
+337,South Gloucestershire,282644
+338,Swindon,221996
+339,Torbay,135780
+340,Wiltshire,498064
+341,Devon,795286
+342,East Devon,144317
+343,Exeter,130428
+344,Mid Devon,81695
+345,North Devon,96110
+346,South Hams,86221
+347,Teignbridge,132844
+348,Torridge,68143
+349,West Devon,55528
+350,Gloucestershire,633558
+351,Cheltenham,117090
+352,Cotswold,89022
+353,Forest of Dean,86543
+354,Gloucester,129285
+355,Stroud,119019
+356,Tewkesbury,92599
+357,Somerset,559399
+358,Mendip,114881
+359,Sedgemoor,122791
+360,Somerset West and Taunton,153866
+361,South Somerset,167861
+362,WALES,3138631
+363,Isle of Anglesey,69961
+364,Gwynedd,124178
+365,Conwy,117181
+366,Denbighshire,95330
+367,Flintshire,155593
+368,Wrexham,136126
+369,Powys,132447
+370,Ceredigion,72992
+371,Pembrokeshire,125055
+372,Carmarthenshire,187568
+373,Swansea,246466
+374,Neath Port Talbot,142906
+375,Bridgend,144876
+376,Vale of Glamorgan,132165
+377,Cardiff,364248
+378,Rhondda Cynon Taf,240131
+379,Merthyr Tydfil,60183
+380,Caerphilly,181019
+381,Blaenau Gwent,69713
+382,Torfaen,93049
+383,Monmouthshire,94142
+384,Newport,153302
+385,SCOTLAND,5438100
+386,Grampian,227560
+387,Grampian,261470
+388,Tayside,116040
+389,Highland,86260
+390,Lothian,518500
+391,Tayside,51400
+392,Dumfries and Galloway,148790
+393,Tayside,148750
+394,Ayrshire and Arran,121840
+395,Greater Glasgow and Clyde,108330
+396,Lothian,105790
+397,Greater Glasgow and Clyde,95170
+398,Tayside,160340
+399,Fife,371910
+400,Greater Glasgow and Clyde,626410
+401,Highland,235540
+402,Greater Glasgow and Clyde,78150
+403,Lothian,91340
+404,Grampian,95520
+405,Eileanan Siar (Western Isles),26830
+406,Ayrshire and Arran,135280
+407,Lanarkshire,340180
+408,Orkney Islands,22190
+409,Tayside,151290
+410,Greater Glasgow and Clyde,177790
+411,Borders,115270
+412,Shetland,22990
+413,Ayrshire and Arran,112550
+414,Lanarkshire,319020
+415,Tayside,94330
+416,Greater Glasgow and Clyde,89130
+417,Lothian,182140
+418,NORTHERN IRELAND,1881641
+419,Antrim and Newtownabbey,142492
+420,Ards and North Down,160864
+421,"Armagh City, Banbridge and Craigavon",214090
+422,Belfast,341877
+423,Causeway Coast and Glens,144246
+424,Derry City and Strabane,150679
+425,Fermanagh and Omagh,116835
+426,Lisburn and Castlereagh,144381
+427,Mid and East Antrim,138773
+428,Mid Ulster,147392
+429,"Newry, Mourne and Down",180012
