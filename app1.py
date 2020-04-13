@@ -74,6 +74,20 @@ options = []
 for tic in df1.index:
   options.append({'label':tic, 'value':tic})
 
+##HEATMAP##
+#5d rolling avg per 100k cases
+scr_5d=pd.DataFrame(index=t.index,columns=list(df1.columns[5:]))
+for i in range(len(df1.columns)-5):
+    #print(i+1)
+    f=(t[t.columns[i+5]]-t[t.columns[i]])/5
+    scr_5d[scr_5d.columns[i]]=f
+    
+#5d rolling avg per 100k deaths
+sdr_5d=pd.DataFrame(index=t2.index,columns=list(df2.columns[5:]))
+for i in range(len(df2.columns)-5):
+    #print(i+1)
+    f=(t2[t2.columns[i+5]]-t2[t2.columns[i]])/5
+    sdr_5d[sdr_5d.columns[i]]=f
 
 ################################################
 #### DATA FOR USA ANALYSES #####################
@@ -128,10 +142,11 @@ tablist2=tablist[0].split('\n')
 str_list=list(np.array(tablist2))
 str_list = list(filter(None, str_list))
 str_list=np.array(str_list)
-str_list=np.where(str_list=="*", "4", str_list) 
+str_list=np.where(str_list=="*", "4", str_list)
+str_list=np.where(str_list=="\xa0", "0", str_list) 
 df_y=pd.DataFrame({
                    "ReportingArea":str_list[0::4], 
-                   "TotalCases": [int(i) for i in str_list[1::4]]})
+                   "TotalCases": [i for i in str_list[1::4]]})
 
 uk=uk.append(df_y,ignore_index=True)
 
@@ -149,7 +164,7 @@ uk_map=pd.read_csv("uk_map.csv").drop(columns="Unnamed: 0")
 uk_mapp=uk_map.groupby(by="ReportingArea").mean()
 
 
-#Load UK Population data
+#Load UK Pop data
 uk_pop=pd.read_csv("uk_pop.csv").drop(columns="Unnamed: 0")
 uk_popp=uk_pop.groupby(by="ReportingArea").sum()
 
@@ -276,19 +291,24 @@ fig3=go.Figure(data=d3,layout=l3)
 
 
 
-#LINE CHART OF CONFIRMED DEATHS
+#HEATMAP
 
-d4=[{
-    'x': df2.columns,
-     'y': df2[df2.index==country].values[0],
-     'name': country
-} for country in li]
+d4=go.Heatmap(
+        z=scr_5d.loc[li],
+        x=scr_5d.columns,
+        y=li,
+        colorscale='Blues', 
+        colorbar={"thickness":10, "tickfont":{"size":10}},
+        )
+
+
 l4=go.Layout(
-    #title=go.layout.Title(text="Deaths as of {}".format(current))
-    #,yaxis_type="log"
-    margin={"r":0,"t":0,"l":0,"b":0},
-    legend={'x':0.01, 'y':0.98},
-
+    #title='New infections per day (5d rolling avg)',
+    margin={"r":0,"t":30,"l":0,"b":0},
+    yaxis={"tickfont":{"size":10}},
+    xaxis={"tickfont":{"size":10}}
+    #xaxis_nticks=36,
+    #zaxis_type="log"
 )
 fig4=go.Figure(data=d4,layout=l4)
 
@@ -667,22 +687,22 @@ html.Div([
         dcc.Dropdown(
           id='country-select',
           options = options,
-          value = ['Italy', 'United Kingdom', 'Switzerland', 'France', 'Germany'],
+          value = countries.sort_values(by="Confirmed", ascending=False).index[:10],
           multi = True)
         ], 
         className="eight columns", 
         style={'font-size': '1rem'}
         ),
       html.Div([
-        html.H6('Scale', 
+        html.H6('Trend', 
           style={'font-size': '1.5rem'}
           ),
         dcc.RadioItems(
-          id="uom",
+          id="trend",
           options=[
-          {'label': 'Absolute', 'value': 'Abs'},
-          {'label': 'per 100k pop.', 'value': 'per100k'}],
-          value='Abs')
+          {'label': 'Cases', 'value': 'Cases'},
+          {'label': 'Deaths', 'value': 'Deaths'}],
+          value='Cases')
         ], 
         className='two columns', 
         style={'font-size': '1rem'}
@@ -693,19 +713,29 @@ html.Div([
       ),
     html.Div([
       html.Div([
-        html.H6("Cases",
+        html.H6("New Cases/Deaths",
           style = {'font-size':'1.5rem'}),
+        html.H6("per 100k pop, 5d rolling average",
+          style = {'font-size':'1rem'}),
+        dcc.Graph(id='heatmap',figure=fig4, style={'margin':'0%','padding': '2%'})
+        ], 
+        className='six columns',style={'padding':'2%'}
+        ),
+      html.Div([
+        html.H6("Cumulative Cases/Deaths",
+          style = {'font-size':'1.5rem'}),
+        dcc.RadioItems(
+          id="uom",
+          options=[
+          {'label': 'Absolute', 'value': 'Abs'},
+          {'label': 'per 100k pop.', 'value': 'per100k'}],
+          value='Abs',
+          labelStyle={'display': 'inline-block'},
+          style={'font-size': '1rem'}),
         dcc.Graph(id="countries-conf",figure=fig3,style={'margin':'0%','padding': '2%'} 
           ),
         ], 
         className='six columns',style={'padding':'2%'}),
-      html.Div([
-        html.H6("Deaths",
-          style = {'font-size':'1.5rem'}),
-        dcc.Graph(id='countries-death',figure=fig4, style={'margin':'0%','padding': '2%'})
-        ], 
-        className='six columns',style={'padding':'2%'}
-        )
       ],
       className='row flex-display',
       style={'padding':'1%'},
@@ -1105,51 +1135,72 @@ def update_chart(units):
 @app.callback(
     Output('countries-conf', 'figure'),
     [Input('country-select', 'value'),
+    Input('trend', 'value'),
     Input('uom', 'value')])
 
-def update_chart(selection, units):
+def update_chart(selection, trend, uom):
     li=[]
     for c in selection:
         li.append(c)
-    if units == "Abs":
-        d3=[{
-        'x': df1.columns,
-        'y': df1[df1.index==country].values[0],
-        'name': country
-        } for country in li]
-        fig3=go.Figure(data=d3,layout=l3)
+    if trend == "Cases":
+      if uom =="Abs":
+          d3=[{
+          'x': df1.columns,
+          'y': df1[df1.index==country].values[0],
+          'name': country
+          } for country in li]
+          fig3=go.Figure(data=d3,layout=l3)
+      else:
+          d3=[{
+          'x': df1.columns,
+          'y': t[t.index==country].values[0],
+          'name': country
+          } for country in li]
+          fig3=go.Figure(data=d3,layout=l3)
     else:
-        d3=[{
-        'x': df1.columns,
-        'y': t[t.index==country].values[0],
-        'name': country
-        } for country in li]
-        fig3=go.Figure(data=d3,layout=l3)
+      if uom =="Abs":
+            d3=[{
+            'x': df2.columns,
+            'y': df2[df2.index==country].values[0],
+            'name': country
+            } for country in li]
+            fig3=go.Figure(data=d3,layout=l3)
+      else:
+          d3=[{
+          'x': df2.columns,
+          'y': t2[t2.index==country].values[0],
+          'name': country
+          } for country in li]
+          fig3=go.Figure(data=d3,layout=l3)
 
     return fig3
 
 @app.callback(
-    Output('countries-death', 'figure'),
+    Output('heatmap', 'figure'),
     [Input('country-select', 'value'),
-    Input('uom', 'value')])
-def update_chart(selection, units):
-    countries=[]
+    Input('trend', 'value')])
+def update_chart(selection, trend):
+    li=[]
     for c in selection:
-        countries.append(c)
-    if units == "Abs":
-        d4=[{
-        'x': df2.columns,
-        'y': df2[df2.index==country].values[0],
-        'name': country
-        } for country in countries]
-        fig4=go.Figure(data=d4,layout=l4)
+        li.append(c)
+    if trend == "Deaths":
+        data=go.Heatmap(
+        z=sdr_5d.loc[li],
+        x=sdr_5d.columns,
+        y=li,
+        colorscale='Blues',
+        colorbar={"thickness":10, "tickfont":{"size":10}},
+        )
+        fig4=go.Figure(data=data,layout=l4)
     else:
-        d4=[{
-        'x': df2.columns,
-        'y': t2[t2.index==country].values[0],
-        'name': country
-        } for country in countries]
-        fig4=go.Figure(data=d4,layout=l4)
+        data=go.Heatmap(
+        z=scr_5d.loc[li],
+        x=scr_5d.columns,
+        y=li,
+        colorscale='Blues',
+        colorbar={"thickness":10, "tickfont":{"size":10}},
+        )
+        fig4=go.Figure(data=data,layout=l4)
     return fig4
 
 #Callback for US map UoM
@@ -1285,7 +1336,7 @@ def update_chart(units):
         secondary_y=True,
     )
 
-    fig9.update_layout(xaxis_showgrid=False, yaxis_showgrid=False,margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.2,'orientation':"h"})
+    fig9.update_layout(xaxis_showgrid=False, yaxis_showgrid=False,margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.2,'orientation':"h"},height=250)
   else:
     fig9 = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -1309,7 +1360,7 @@ def update_chart(units):
         secondary_y=True,
     )
 
-    fig9.update_layout(xaxis_showgrid=False, yaxis_showgrid=False,margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.2,'orientation':"h"})
+    fig9.update_layout(xaxis_showgrid=False, yaxis_showgrid=False,margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.2,'orientation':"h"}, height=250)
 
   return fig9
 
