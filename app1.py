@@ -63,7 +63,7 @@ countries["Conf100"]=round(countries["Confirmed"]*100/countries["PopTotal"])
 countries["Deaths100"]=round(countries["Deaths"]*100/countries["PopTotal"])
 countries["Mortality"]=round(countries["Deaths"]*100/countries["Confirmed"],2)
 countries["text"]= countries.index +'<br>' + "Cases: " + countries["Confirmed"].astype('str') + '<br>' + "Deaths: "+ countries["Deaths"].astype('str')
-countries["text100"]= countries.index +'<br>' + "Cases: " + countries["Conf100"].astype('str') + '<br>' + "Deaths: "+ countries["Deaths100"].astype('str') 
+countries["text100"]= countries.index +'<br>' + "Cases per 100k pop.: " + countries["Conf100"].astype('str') + '<br>' + "Deaths per 100k pop.: "+ countries["Deaths100"].astype('str') 
 
 ##country='Italy'
 li=[]
@@ -108,14 +108,12 @@ us_all["Mortality"]=round(us_all["Deaths"]*100/us_all["Confirmed"],2)
 us_all["Conf100"]=us_all["Confirmed"]*100000/us_all["POPESTIMATE2019"]
 us_all["Deaths100"]=us_all["Deaths"]*100000/us_all["POPESTIMATE2019"]
 us_all["Ctylabel"]=us_all["Admin2"]+ ", "+us_all["Abbreviation"]
-us_all["text100"]= us_all['Admin2'] + ', '+ us_all["Province_State"] + '<br>Cases: ' + (round(us_all['Conf100'],1).astype(str))+ '<br>Deaths: ' + (round(us_all['Deaths100'],1).astype(str))
+us_all["text100"]= us_all['Admin2'] + ', '+ us_all["Province_State"] + '<br>Cases per 100k pop.: ' + (round(us_all['Conf100'],1).astype(str))+ '<br>Deaths per 100k pop.: ' + (round(us_all['Deaths100'],1).astype(str))
 
 dff=us_all[["Province_State", "Confirmed", "Deaths","POPESTIMATE2019"]].groupby(by="Province_State").sum()
 dff["Conf100"]=dff["Confirmed"]*100000/dff["POPESTIMATE2019"]
 dff["Deaths100"]=dff["Deaths"]*100000/dff["POPESTIMATE2019"]
 dff["Mortality"]=round(dff["Deaths"]*100/dff["Confirmed"],2)
-
-
 
 
 ################################################
@@ -172,8 +170,9 @@ uk_popp=uk_pop.groupby(by="ReportingArea").sum()
 def convert(val):
     step1=str(val)
     step2 = step1.replace(',','')
-    step3= int(step2)
-    return step3
+    step3 = step2.replace('**','')
+    step4= int(step3)
+    return step4
 
 
 #Merge Statistics, map and population data
@@ -184,7 +183,7 @@ uk_all["Confirmed"]=uk_all["Confirmed"].apply(convert)
 
 uk_all["Conf100"]=uk_all["Confirmed"]*100000/uk_all["All ages"]
 uk_all["text"]= uk_all.index+ ', '+ '<br>Cases: ' + (uk_all['Confirmed']).astype(str)
-uk_all["text100"]= uk_all.index + ', '+ '<br>Cases: ' + (round(uk_all['Conf100'],1).astype(str))
+uk_all["text100"]= uk_all.index + ', '+ '<br>Cases per 100k pop.: ' + (round(uk_all['Conf100'],1).astype(str))
 
 
 #Create simplified table for comparing local authorities
@@ -235,280 +234,6 @@ uk_clean["Conf100"]= uk_clean["Confirmed"]*100000/uk_clean["All ages"]
 uk_clean=uk_clean.drop(columns=["long", "lat"])
 
 
-################################################
-#### INITIALISATION OF CHARTS ##################
-################################################
-
-#WORLD MAP WITH CONFIRMED CASES
-d1 =go.Scattergeo(
-    lon=countries["longitude"],
-    lat=countries["latitude"],
-    text = countries['text'],
-    hoverinfo = 'text',
-    marker=dict(
-        size= np.sqrt(countries["Confirmed"]),
-        line_width=0.5,
-        sizemode='area'
-    )
-)
-
-l1=go.Layout(
-    #title=go.layout.Title(text="Cases as of {}".format(current))
-    #,yaxis_type="log"
-    margin={"r":0,"t":0,"l":0,"b":0}
-)
-
-fig1=go.Figure(data=d1, layout=l1)
-
-
-
-fig1.update_geos(
-    visible=True, 
-    resolution=110, 
-    showcountries=True, 
-    countrycolor="grey",
-    showsubunits=True, 
-    subunitcolor="White",
-    lataxis_showgrid=True, 
-    lonaxis_showgrid=True
-)
-
-
-#LINE CHART OF CONFIRMED CASES
-
-d3=[{
-    'x': df1.columns,
-     'y': df1[df1.index==country].values[0],
-     'name': country
-} for country in li]
-l3=go.Layout(
-    #title=go.layout.Title(text="Cases as of {}".format(current))
-    #,yaxis_type="log"
-    margin={"r":0,"t":0,"l":0,"b":0},
-    legend={'x':0.01, 'y':0.98},
-)
-fig3=go.Figure(data=d3,layout=l3)
-
-
-
-#HEATMAP
-
-d4=go.Heatmap(
-        z=scr_5d.loc[li],
-        x=scr_5d.columns,
-        y=li,
-        colorscale='Blues', 
-        colorbar={"thickness":10, "tickfont":{"size":10}},
-        )
-
-
-l4=go.Layout(
-    #title='New infections per day (5d rolling avg)',
-    margin={"r":0,"t":30,"l":0,"b":0},
-    yaxis={"tickfont":{"size":10}},
-    xaxis={"tickfont":{"size":10}}
-    #xaxis_nticks=36,
-    #zaxis_type="log"
-)
-fig4=go.Figure(data=d4,layout=l4)
-
-
-
-#USA MAP
-
-d5= go.Scattergeo(
-    lon = us_all['Long_'],
-    lat = us_all['Lat'],
-    text = us_all['text'],
-    hoverinfo = 'text',
-    marker = dict(
-            size = 0.2*(us_all['Confirmed']),
-            line_width=0.5,
-            sizemode = 'area'
-        )
-
-)
-
-l5=go.Layout(margin={"r":0,"t":0,"l":0,"b":0})
-
-fig5 = go.Figure(data=d5, layout=l5)
-
-fig5.update_geos(
-    visible=True, 
-    resolution=110, 
-    scope="usa",
-    showcountries=True, 
-    countrycolor="Grey",
-    showsubunits=True, 
-    subunitcolor="White"
-)
-
-
-#UK Map
-
-d6=go.Scattermapbox(
-    lon = uk_all['long'],
-    lat = uk_all['lat'],
-    text = uk_all['text'],
-    hoverinfo = 'text',
-    marker = dict(
-            size = 5*np.sqrt(uk_all['Confirmed']),
-            #line_width=0.5,
-            sizemode = 'area',
-        symbol = 'circle'
-        ))
-
-l6=go.Layout(
-  mapbox_style="carto-positron",
-  mapbox=dict(
-    bearing=0,
-    center=go.layout.mapbox.Center(
-    lat=54.3781,
-    lon=-3.4360
-    ),
-    pitch=0,
-    zoom=4),
-  margin={"r":0,"t":0,"l":0,"b":0},
-  #autosize=False,
-  #width=500,
-  #height=500
- )
-
-fig6=go.Figure(data=d6, layout=l6)
-
-
-#State total cases
-fig7 = make_subplots(specs=[[{"secondary_y": True}]])
-
-fig7.add_trace(
-    go.Bar(x=dff.sort_values(by=['Confirmed'], ascending=False).index[:10],
-                       y=dff.sort_values(by=['Confirmed'], ascending=False)["Confirmed"][:10],
-                        name="Cases"
-                       #orientation='h'
-                      ),
-                 secondary_y=False
-               )
-
-fig7.add_trace(
-    go.Scatter(x=dff.sort_values(by=['Confirmed'],ascending=False).index[:10], 
-               y=dff.sort_values(by=['Confirmed'],ascending=False)["Mortality"][:10], 
-               name="Mortality (%)"
-              ),
-    secondary_y=True,
-)
-
-fig7.update_layout(xaxis_showgrid=False, yaxis_showgrid=False, 
-                   margin={"r":0,"t":0,"l":0,"b":0},
-                   legend={'x':-0.01, 'y':1.2,'orientation':"h"},
-                   height=250
-                  )
-
-#County total cases
-fig8 = make_subplots(specs=[[{"secondary_y": True}]])
-
-fig8.add_trace(go.Bar(x=us_all.sort_values(by=['Confirmed'],ascending=False)["Ctylabel"][:10],
-                       y=us_all.sort_values(by=['Confirmed'],ascending=False)["Confirmed"][:10],
-                      name="Cases"
-                       #orientation='h'
-                      ),
-               secondary_y=False,
-               )
-
-fig8.add_trace(
-    go.Scatter(x=us_all.sort_values(by=['Confirmed'],ascending=False)["Ctylabel"][:10], 
-               y=us_all.sort_values(by=['Confirmed'],ascending=False)["Mortality"][:10], 
-               name="Mortality (%)"
-              ),
-    secondary_y=True,
-)
-
-fig8.update_layout(xaxis_showgrid=False, yaxis_showgrid=False,
-                  margin={"r":0,"t":0,"l":0,"b":0},
-                  legend={'x':-0.01, 'y':1.2,'orientation':"h"},
-                  height=250
-                  )
-
-#Cases by Country (UK)
-fig9 = make_subplots(specs=[[{"secondary_y": True}]])
-
-fig9.add_trace(
-    go.Bar(x=["England", "Scotland", "Wales", "Northern Ireland"],
-           y=[uk_sum["EnglandCases"][0],uk_sum["ScotlandCases"][0],uk_sum["WalesCases"][0],uk_sum["NICases"][0]],
-             name="Cases",
-                       #orientation='h'
-                      ),
-                 secondary_y=False
-               )
-
-fig9.add_trace(
-    go.Scatter(x=["England", "Scotland", "Wales", "Northern Ireland"],
-           y=[round(uk_sum["EnglandDeaths"][0]*100/uk_sum["EnglandCases"][0],2),
-              round(uk_sum["ScotlandDeaths"][0]*100/uk_sum["ScotlandCases"][0],2),
-              round(uk_sum["WalesDeaths"][0]*100/uk_sum["WalesCases"][0],2),
-              round(uk_sum["NIDeaths"][0]*100/uk_sum["NICases"][0],2)],
-               name="Mortality (%)"
-              ),
-    secondary_y=True,
-)
-
-fig9.update_layout(xaxis_showgrid=False, yaxis_showgrid=False,
-                  margin={"r":0,"t":0,"l":0,"b":0},
-                  legend={'x':-0.01, 'y':1.2,'orientation':"h"},
-                  height=250)
-
-
-#Reporting Area total cases per 100k
-d10=go.Bar(x=uk_clean.sort_values(by=['Confirmed'], ascending=False).index[:10],
-                       y=uk_clean.sort_values(by=['Confirmed'],ascending=False)["Confirmed"][:10],
-                       #orientation='h'
-                      )
-
-l10=go.Layout(
-  height=300,
-  margin={"r":0,"t":0,"l":0,"b":0}
-  )
-
-fig10=go.Figure(data=d10, layout=l10)
-
-#Cases by Country
-
-fig11= make_subplots(specs=[[{"secondary_y": True}]])
-
-
-fig11.add_trace(go.Bar(x=countries.sort_values(by="Confirmed", ascending=False).index[:10],
-                       y=countries.sort_values(by="Confirmed", ascending=False)["Confirmed"][:10],
-                       #orientation='h',
-                     name="Cases"
-                      ),
-              secondary_y=False,
-               )
-fig11.add_trace(
-    go.Scatter(x=countries.sort_values(by="Confirmed", ascending=False).index[:10], 
-               y=countries.sort_values(by="Confirmed", ascending=False)["Mortality"][:10], 
-               name="Mortality (%)"
-              ),
-    secondary_y=True,
-)
-
-fig11.update_layout(xaxis_showgrid=False, 
-                    yaxis_showgrid=False,
-                   margin={"r":0,"t":0,"l":0,"b":0},
-                   legend={'x':-0.01, 'y':1.15,'orientation':"h"},
-                   height=300)
-
-
-#Deaths by Country
-
-d12 = d=go.Bar(x=countries.sort_values(by="Deaths", ascending=False).index[:10],
-            y=countries.sort_values(by="Deaths", ascending=False)["Deaths"][:10])
-
-l12=go.Layout(
-  height=300,
-  margin={"r":0,"t":0,"l":0,"b":0}
-  )
-
-fig12=go.Figure(data=d12, layout=l12)
-
 
 ################################################
 #### APP LAYOUT  ###############################
@@ -519,7 +244,7 @@ app.layout = html.Div([
 ## DIV BLOCK FOR HEADERS ETC
   html.Div([
     html.H5('COVID-19 as of {}'.format(str(df1.columns[-1]))),       
-    html.P('Data Source: Johns Hopkins Univerity. Data relies upon publicly available information from multiple sources, that does not always agree',style={'font-size': '1rem','color':'#696969'})
+    html.P('Data Source: Johns Hopkins Univerity',style={'font-size': '1rem','color':'#696969'})
     ], 
     className='row', 
     style={'marginbottom':'25px','padding':'1%'},
@@ -593,7 +318,7 @@ app.layout = html.Div([
             ),
           ], 
           className='row'),
-        dcc.Graph(id= "globe",figure = fig1)
+        dcc.Graph(id= "globe")
         ],
         className='row flex-display',
         style={'padding':'1.5%'}
@@ -624,7 +349,7 @@ app.layout = html.Div([
                 ),
               ],
               className='row'),
-            dcc.Graph(id='country-cases', figure=fig11,
+            dcc.Graph(id='country-cases', 
               #style={'margin':'2%','padding': '0%'}
               #responsive='true',
               #className='pretty_container'
@@ -653,7 +378,7 @@ app.layout = html.Div([
                 ),
               ], 
               className='row'),
-            dcc.Graph(id='country-deaths', figure=fig12,
+            dcc.Graph(id='country-deaths',
               style={'margin':'2%','padding': '0%'}
               #responsive='true',
               #className='pretty_container'
@@ -694,7 +419,7 @@ html.Div([
         style={'font-size': '1rem'}
         ),
       html.Div([
-        html.H6('Trend', 
+        html.H6('Select trend', 
           style={'font-size': '1.5rem'}
           ),
         dcc.RadioItems(
@@ -713,16 +438,16 @@ html.Div([
       ),
     html.Div([
       html.Div([
-        html.H6("New Cases/Deaths",
+        html.H6(id="heatmap-header", 
           style = {'font-size':'1.5rem'}),
         html.H6("per 100k pop, 5d rolling average",
           style = {'font-size':'1rem'}),
-        dcc.Graph(id='heatmap',figure=fig4, style={'margin':'0%','padding': '2%'})
+        dcc.Graph(id='heatmap', style={'margin':'0%','padding': '2%'})
         ], 
         className='six columns',style={'padding':'2%'}
         ),
       html.Div([
-        html.H6("Cumulative Cases/Deaths",
+        html.H6(id="line-header", 
           style = {'font-size':'1.5rem'}),
         dcc.RadioItems(
           id="uom",
@@ -732,7 +457,7 @@ html.Div([
           value='Abs',
           labelStyle={'display': 'inline-block'},
           style={'font-size': '1rem'}),
-        dcc.Graph(id="countries-conf",figure=fig3,style={'margin':'0%','padding': '2%'} 
+        dcc.Graph(id="countries-conf",style={'margin':'0%','padding': '2%'} 
           ),
         ], 
         className='six columns',style={'padding':'2%'}),
@@ -745,7 +470,7 @@ html.Div([
 #BLOCK FOR US
   html.Div([
     html.H5('USA: as of {}'.format(str(df1.columns[-1]))),       
-    html.P('Data Source: Johns Hopkins Univerity. Data relies upon publicly available information from multiple sources, that does not always agree',style={'font-size': '1rem','color':'#696969'})
+    html.P('Data Source: Johns Hopkins Univerity',style={'font-size': '1rem','color':'#696969'})
     ], 
     className='row', 
     style={'marginbottom':'25px','padding':'1%'}
@@ -817,7 +542,7 @@ html.Div([
                 )
               ], 
               className='row'),
-            dcc.Graph(id= "US map",figure = fig5)
+            dcc.Graph(id= "US map")
             ],
             className='row flex-display',
             style={'padding':'1.5%'}
@@ -847,7 +572,7 @@ html.Div([
                 style={'font-size': '1rem'}
                 ),
               ], className='row'),
-            dcc.Graph(id='county-cases', figure=fig8,
+            dcc.Graph(id='county-cases',
               style={'margin':'0%','padding': '2%'}
                 #responsive=True,
                 #className='pretty_container'
@@ -875,7 +600,7 @@ html.Div([
                 style={'font-size': '1rem'}
                 ),
               ], className='row'),
-            dcc.Graph(id='state-cases', figure=fig7,
+            dcc.Graph(id='state-cases',
               style={'margin':'0%','padding': '2%'}
               #responsive=True,
               #className='pretty_container'
@@ -897,7 +622,7 @@ html.Div([
 #BLOCK FOR UK 
 html.Div([
   html.H5('UK: as of {}'.format(timestamp.strftime("%m/%d/%y"))),       
-  html.P('Data Source: Public Health England',style={'font-size': '1rem','color':'#696969'})
+  html.P('Data Sources: Public Health England, Scottish Government',style={'font-size': '1rem','color':'#696969'})
   ], 
   className='row', 
   style={'marginbottom':'25px','padding':'1%'}
@@ -968,7 +693,7 @@ html.Div([
             ], className='four columns'
             ),
           ], className='row'),
-          dcc.Graph(id= "UK map",figure = fig6)
+          dcc.Graph(id= "UK map")
           ],
           className='row flex-display',
           style={'padding':'1.5%'}
@@ -1000,7 +725,7 @@ html.Div([
             ],
             className='row'
             ),
-          dcc.Graph(id='area-cases', figure=fig10,
+          dcc.Graph(id='area-cases',
             style={'margin':'0%','padding': '2%'}
             #responsive=True,
             #className='pretty_container'
@@ -1030,7 +755,7 @@ html.Div([
             ],
             className='row'
             ),
-          dcc.Graph(id='uk-cases', figure=fig9,
+          dcc.Graph(id='uk-cases',
             style={'margin':'0%','padding': '2%'}
             #responsive=True,
             #className='pretty_container'
@@ -1051,6 +776,62 @@ html.Div([
 ],
 style={"display": "flex", "flex-direction": "column"}
 )
+
+
+################################################
+#### CHART LAYOUTS #############################
+################################################
+
+#WORLD & US MAPS
+l_map=go.Layout(
+    margin={"r":0,"t":0,"l":0,"b":0},
+    geo={
+    'visible': True, 
+    'resolution':110, 
+    'showcountries':True, 
+    'countrycolor':"grey",
+    'showsubunits':True, 
+    'subunitcolor':"White",
+    'lataxis_showgrid':True,
+    'lonaxis_showgrid':True
+    }
+)
+
+#UK Map
+l_mapbox=go.Layout(
+  margin={"r":0,"t":0,"l":0,"b":0},
+  mapbox_style="carto-positron",
+  mapbox={
+    'bearing':0,
+    'center':go.layout.mapbox.Center(lat=54.3781,lon=-3.4360),
+    'pitch':0,
+    'zoom':4
+    },
+  
+ )
+
+#HEATMAP & LINE CHART
+l_trend=go.Layout(
+  margin={"r":0,"t":30,"l":0,"b":0},
+  yaxis={"tickfont":{"size":10}},
+  xaxis={"tickfont":{"size":10}},
+  legend={'x':0.01, 'y':0.98, 'font':{'size':10}}
+)
+
+#SIMPLE BARS
+l_bar_s=go.Layout(
+  height=300,
+  margin={"r":0,"t":0,"l":0,"b":0}
+  )
+
+#COMPLEX BARS
+l_bar_c=go.Layout(
+  height=250,
+  xaxis_showgrid=False,
+  yaxis_showgrid=False, 
+  margin={"r":0,"t":0,"l":0,"b":0},
+  legend={'x':-0.01, 'y':1.2,'orientation':"h"}
+  )
 
 
 ################################################
@@ -1075,22 +856,22 @@ def update_chart(units):
         sizemode='area'
     )))
   else:
-    d=d1
+    d=go.Scattergeo(
+    lon=countries["longitude"],
+    lat=countries["latitude"],
+    text = countries['text'],
+    hoverinfo = 'text',
+    marker=dict(
+        size= np.sqrt(countries["Confirmed"]),
+        line_width=0.5,
+        sizemode='area'
+    )
+)
 
   fig1=go.Figure(data=d)
-  fig1.update_layout(l1)
-
-  fig1.update_geos(
-    visible=True, 
-    resolution=110, 
-    showcountries=True, 
-    countrycolor="grey",
-    showsubunits=True, 
-    subunitcolor="White",
-    lataxis_showgrid=True, 
-    lonaxis_showgrid=True
-)
+  fig1.update_layout(l_map)
   return fig1
+
 #Callback for Countries Cases UoM
 @app.callback(
   Output('country-cases', 'figure'),
@@ -1104,7 +885,7 @@ def update_chart(units):
     fig11.add_trace(go.Scatter(x=countries.sort_values(by="Conf100", ascending=False).index[:10], 
                       y=countries.sort_values(by="Conf100", ascending=False)["Mortality"][:10], 
                       name="Mortality (%)"), secondary_y=True),
-    fig11.update_layout(xaxis_showgrid=False,yaxis_showgrid=False, margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.15,'orientation':"h"})
+    fig11.update_layout(l_bar_c)
   else:
     fig11= make_subplots(specs=[[{"secondary_y": True}]])
     fig11.add_trace(go.Bar(x=countries.sort_values(by="Confirmed", ascending=False).index[:10], 
@@ -1113,7 +894,7 @@ def update_chart(units):
     fig11.add_trace(go.Scatter(x=countries.sort_values(by="Confirmed", ascending=False).index[:10], 
                       y=countries.sort_values(by="Confirmed", ascending=False)["Mortality"][:10], 
                       name="Mortality (%)"), secondary_y=True),
-    fig11.update_layout(xaxis_showgrid=False,yaxis_showgrid=False, margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.15,'orientation':"h"})
+    fig11.update_layout(l_bar_c)
   return fig11
 
 #Callback for Countries deaths UoM
@@ -1125,13 +906,24 @@ def update_chart(units):
     d=go.Bar(x=countries.sort_values(by="Deaths100", ascending=False).index[:10],
             y=countries.sort_values(by="Deaths100", ascending=False)["Deaths100"][:10])
   else:
-    d=d12
+    d=go.Bar(x=countries.sort_values(by="Deaths", ascending=False).index[:10],
+            y=countries.sort_values(by="Deaths", ascending=False)["Deaths"][:10])
 
   fig12=go.Figure(data=d)
-  fig12.update_layout(l12)
+  fig12.update_layout(l_bar_s)
   return fig12
 
-#Callback for Line Charts
+#Callbacks for Line Chart
+@app.callback(
+  Output('line-header','children'),
+  [Input('trend', 'value')])
+
+def update_header(trend):
+  if trend=="Cases":
+    return "Cumulative Cases"
+  else:
+    return "Cumulative Deaths"
+
 @app.callback(
     Output('countries-conf', 'figure'),
     [Input('country-select', 'value'),
@@ -1149,14 +941,14 @@ def update_chart(selection, trend, uom):
           'y': df1[df1.index==country].values[0],
           'name': country
           } for country in li]
-          fig3=go.Figure(data=d3,layout=l3)
+          fig3=go.Figure(data=d3,layout=l_trend)
       else:
           d3=[{
           'x': df1.columns,
           'y': t[t.index==country].values[0],
           'name': country
           } for country in li]
-          fig3=go.Figure(data=d3,layout=l3)
+          fig3=go.Figure(data=d3,layout=l_trend)
     else:
       if uom =="Abs":
             d3=[{
@@ -1164,16 +956,26 @@ def update_chart(selection, trend, uom):
             'y': df2[df2.index==country].values[0],
             'name': country
             } for country in li]
-            fig3=go.Figure(data=d3,layout=l3)
+            fig3=go.Figure(data=d3,layout=l_trend)
       else:
           d3=[{
           'x': df2.columns,
           'y': t2[t2.index==country].values[0],
           'name': country
           } for country in li]
-          fig3=go.Figure(data=d3,layout=l3)
-
+          fig3=go.Figure(data=d3,layout=l_trend)
     return fig3
+
+#Callbacks for heatmap
+@app.callback(
+  Output('heatmap-header','children'),
+  [Input('trend', 'value')])
+
+def update_header(trend):
+  if trend=="Cases":
+    return "New Cases"
+  else:
+    return "New Deaths"
 
 @app.callback(
     Output('heatmap', 'figure'),
@@ -1191,7 +993,7 @@ def update_chart(selection, trend):
         colorscale='Blues',
         colorbar={"thickness":10, "tickfont":{"size":10}},
         )
-        fig4=go.Figure(data=data,layout=l4)
+        fig4=go.Figure(data=data,layout=l_trend)
     else:
         data=go.Heatmap(
         z=scr_5d.loc[li],
@@ -1200,7 +1002,7 @@ def update_chart(selection, trend):
         colorscale='Blues',
         colorbar={"thickness":10, "tickfont":{"size":10}},
         )
-        fig4=go.Figure(data=data,layout=l4)
+        fig4=go.Figure(data=data,layout=l_trend)
     return fig4
 
 #Callback for US map UoM
@@ -1220,18 +1022,24 @@ def update_chart(units):
             sizemode = 'area'
         ))
   else:
-    d=d5
-  fig5=go.Figure(data=d)
-  fig5.update_layout(l5)
-  fig5.update_geos(
-    visible=True, 
-    resolution=110, 
-    scope="usa",
-    showcountries=True, 
-    countrycolor="Grey",
-    showsubunits=True, 
-    subunitcolor="White")
+    d= go.Scattergeo(
+        lon = us_all['Long_'],
+        lat = us_all['Lat'],
+        text = us_all['text'],
+        hoverinfo = 'text',
+        marker = dict(
+                size = 0.2*(us_all['Confirmed']),
+                line_width=0.5,
+                sizemode = 'area'
+            ))
 
+
+  fig5=go.Figure(data=d)
+  fig5.update_layout(l_map)
+  fig5.update_geos(scope="usa",
+                lataxis_showgrid=False, 
+                lonaxis_showgrid=False
+                )
   return fig5
 
 #Callback for States UoM
@@ -1247,7 +1055,7 @@ def update_chart(units):
     fig7.add_trace(go.Scatter(x=dff.sort_values(by="Conf100", ascending=False).index[:10], 
                       y=dff.sort_values(by="Conf100", ascending=False)["Mortality"][:10], 
                       name="Mortality (%)"), secondary_y=True),
-    fig7.update_layout(xaxis_showgrid=False,yaxis_showgrid=False, margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.2,'orientation':"h"})
+    fig7.update_layout(l_bar_c)
   else:
     fig7= make_subplots(specs=[[{"secondary_y": True}]])
     fig7.add_trace(go.Bar(x=dff.sort_values(by="Confirmed", ascending=False).index[:10], 
@@ -1256,7 +1064,7 @@ def update_chart(units):
     fig7.add_trace(go.Scatter(x=dff.sort_values(by="Confirmed", ascending=False).index[:10], 
                       y=dff.sort_values(by="Confirmed", ascending=False)["Mortality"][:10], 
                       name="Mortality (%)"), secondary_y=True),
-    fig7.update_layout(xaxis_showgrid=False,yaxis_showgrid=False, margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.2,'orientation':"h"})
+    fig7.update_layout(l_bar_c)
   return fig7
 #Callback for Counties UoM
 @app.callback(
@@ -1271,7 +1079,7 @@ def update_chart(units):
     fig8.add_trace(go.Scatter(x=us_all.sort_values(by="Conf100", ascending=False)["Ctylabel"][:10], 
                       y=us_all.sort_values(by="Conf100", ascending=False)["Mortality"][:10], 
                       name="Mortality (%)"), secondary_y=True),
-    fig8.update_layout(xaxis_showgrid=False,yaxis_showgrid=False, margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.2,'orientation':"h"})
+    fig8.update_layout(l_bar_c)
   else:
     fig8= make_subplots(specs=[[{"secondary_y": True}]])
     fig8.add_trace(go.Bar(x=us_all.sort_values(by="Confirmed", ascending=False)["Ctylabel"][:10], 
@@ -1280,7 +1088,7 @@ def update_chart(units):
     fig8.add_trace(go.Scatter(x=us_all.sort_values(by="Confirmed", ascending=False)["Ctylabel"][:10], 
                       y=us_all.sort_values(by="Confirmed", ascending=False)["Mortality"][:10], 
                       name="Mortality (%)"), secondary_y=True),
-    fig8.update_layout(xaxis_showgrid=False,yaxis_showgrid=False, margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.2,'orientation':"h"})
+    fig8.update_layout(l_bar_c)
   return fig8
 
 #Callback for UK map UoM
@@ -1297,14 +1105,24 @@ def update_chart(units):
     marker = dict(
             size = uk_all['Conf100'],
             sizemode = 'area',
-        symbol = 'circle'
+            symbol = 'circle'
         ))
   else:
-    d=d6
+    d=go.Scattermapbox(
+      lon = uk_all['long'],
+      lat = uk_all['lat'],
+      text = uk_all['text'],
+      hoverinfo = 'text',
+      marker = dict(
+              size = 5*np.sqrt(uk_all['Confirmed']),
+              #line_width=0.5,
+              sizemode = 'area',
+              symbol = 'circle'
+          ))
   fig6=go.Figure(data=d)
-  fig6.update_layout(l6)
-
+  fig6.update_layout(l_mapbox)
   return fig6
+
 #Callback for UK countries UoM
 @app.callback(
   Output('uk-cases', 'figure'),
@@ -1335,8 +1153,7 @@ def update_chart(units):
                   ),
         secondary_y=True,
     )
-
-    fig9.update_layout(xaxis_showgrid=False, yaxis_showgrid=False,margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.2,'orientation':"h"},height=250)
+    fig9.update_layout(l_bar_c)
   else:
     fig9 = make_subplots(specs=[[{"secondary_y": True}]])
 
@@ -1359,9 +1176,7 @@ def update_chart(units):
                   ),
         secondary_y=True,
     )
-
-    fig9.update_layout(xaxis_showgrid=False, yaxis_showgrid=False,margin={"r":0,"t":0,"l":0,"b":0},legend={'x':-0.01, 'y':1.2,'orientation':"h"}, height=250)
-
+    fig9.update_layout(l_bar_c)
   return fig9
 
 
@@ -1375,10 +1190,13 @@ def update_chart(units):
                        y=uk_clean.sort_values(by=['Conf100'],ascending=False)["Conf100"][:10],
                       )
   else:
-    d=d10
+    d=go.Bar(x=uk_clean.sort_values(by=['Confirmed'], ascending=False).index[:10],
+                       y=uk_clean.sort_values(by=['Confirmed'],ascending=False)["Confirmed"][:10],
+                       #orientation='h'
+                      )
 
   fig10=go.Figure(data=d)
-  fig10.update_layout(l10)
+  fig10.update_layout(l_bar_s)
   return fig10
 
 if __name__ == '__main__':
