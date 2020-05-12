@@ -177,7 +177,9 @@ def prep_uk_scatter(d1,d2,d3):
     dd1=dd1[["Area name", "Specimen date", "Cumulative lab-confirmed cases"]][dd1["Specimen date"]==dd1["Specimen date"].max()]
     dd1=dd1.drop(labels=["Specimen date"], axis=1)
     dd1.rename(columns={"Area name":"ReportingArea", "Cumulative lab-confirmed cases": "Confirmed"}, inplace=True)
+    dd1.drop_duplicates(inplace=True)
     dd2=d2[d2["Specimen date"]==d2["Specimen date"].max()][["Local Authority", "Cumulative cases"]].rename(columns={"Local Authority": "ReportingArea", "Cumulative cases": "Confirmed"})
+    dd2.drop_duplicates(inplace=True)
     df=dd1.append(dd2, ignore_index=True).append(d3, ignore_index=True)
     df=df.astype('str')
     df.set_index("ReportingArea", inplace=True)
@@ -204,7 +206,6 @@ l_map=go.Layout(
     'countrycolor':"grey",
     'showsubunits':True, 
     'subunitcolor':"White",
-    #'projection_type': "natural earth",
     'showframe':False,
     'coastlinecolor':"slategrey",
     'countrycolor':'white',
@@ -422,7 +423,7 @@ app.layout = html.Div([
 ## DIV BLOCK FOR HEADERS ETC
   html.Div([
     html.H5('Worldwide to date'),       
-    html.P('Data Source: Johns Hopkins Univerity',style={'font-size': '1rem','color':'#696969'})
+    html.P('Data Source: Johns Hopkins CSSE. Note: The CSSE states that its numbers rely upon publicly available data from multiple sources, which do not always agree',style={'font-size': '1rem','color':'#696969'})
     ], 
     className='row flex-display', 
     style={'marginbottom':'15px','padding':'1%'},
@@ -677,7 +678,7 @@ app.layout = html.Div([
   #BLOCK FOR US
   html.Div([
     html.H5('USA to date'),       
-    html.P('Data Source: Johns Hopkins Univerity',style={'font-size': '1rem','color':'#696969'})
+    html.P('Johns Hopkins CSSE. Note: The CSSE states that its numbers rely upon publicly available data from multiple sources, which do not always agree',style={'font-size': '1rem','color':'#696969'})
     ], 
     className='row', 
     style={'marginbottom':'15px','padding':'1%'},
@@ -866,8 +867,8 @@ app.layout = html.Div([
       ),
 #BLOCK FOR UK
   html.Div([
-    html.H5('Great Britain to date'),       
-    html.P('Data Source: Public Health England, Public Health Wales, Scottish Government',style={'font-size': '1rem','color':'#696969'})
+    html.H5('United Kingdom to date'),       
+    html.P('Data Source: Public Health England, Public Health Wales, Scottish Government. Local and national sub-totals are NHS only, and do not include results from testing by commercial partners.',style={'font-size': '1rem','color':'#696969'})
     ], 
     className='row', 
     style={'marginbottom':'15px','padding':'1%'},
@@ -914,7 +915,7 @@ app.layout = html.Div([
           html.Div([
             html.Div([
               html.Div([
-                html.P('Statistics by nation',
+                html.P('Statistics by local area (excl. Northern Ireland)',
                   style={'margin-bottom':'0', 'paddingBottom':'0','font-size': '1.5rem'}),
                 html.P('Click for detail',
                   style={'color':'#696969','font-size': '1rem', 'font-style':'italic'}),
@@ -1058,28 +1059,22 @@ style={"display": "flex", "flex-direction": "column"}
   [Input('uom-ww-map', 'value')])
 def update_chart(units):
   if units == 'per100k':
-    d = go.Figure(go.Scattergeo(
+    s= 0.5*prep_countries_data(df1,df2)["Conf100"]
+    t=prep_countries_data(df1,df2)['text100']
+  else:
+    s=0.003*prep_countries_data(df1,df2)["Confirmed"]
+    t=prep_countries_data(df1,df2)['text']
+  d = go.Figure(go.Scattergeo(
     lon=prep_countries_data(df1,df2)["longitude"],
     lat=prep_countries_data(df1,df2)["latitude"],
-    text = prep_countries_data(df1,df2)['text100'],
+    text = t,
     hoverinfo = 'text',
     marker=dict(
-        size= 0.5*prep_countries_data(df1,df2)["Conf100"],
+        size= s,
         line_width=0.5,
         sizemode='area'
     )))
-  else:
-    d=go.Scattergeo(
-    lon=prep_countries_data(df1,df2)["longitude"],
-    lat=prep_countries_data(df1,df2)["latitude"],
-    text = prep_countries_data(df1,df2)['text'],
-    hoverinfo = 'text',
-    marker=dict(
-        size= 0.003*prep_countries_data(df1,df2)["Confirmed"],
-        line_width=0.5,
-        sizemode='area'
-    )
-)
+  
 
   fig1=go.Figure(data=d)
   fig1.update_layout(l_map)
@@ -1171,37 +1166,34 @@ def update_chart(selection, trend, uom):
     for c in selection:
         li.append(c)
     if trend == "Cases":
+      x=pd.to_datetime(np.array(prep_world_data(df1).columns))
       if uom =="Abs":
           d3=[{
-          'x': pd.to_datetime(np.array(prep_world_data(df1).columns)),
+          'x': x,
           'y': prep_world_data(df1)[prep_world_data(df1).index==country].values[0],
           'name': country
           } for country in li]
-          fig3=go.Figure(data=d3,layout=l_trend)
-          #fig3.update_layout(yaxis_type="log")
       else:
           d3=[{
-          'x': pd.to_datetime(np.array(prep_world_data(df1).columns)),
+          'x': x,
           'y': prep_world_capita(df1).loc[:, :df1.columns[-1]][prep_world_capita(df1).index==country].values[0],
           'name': country
           } for country in li]
-          fig3=go.Figure(data=d3,layout=l_trend)
     else:
+      x=pd.to_datetime(np.array(prep_world_data(df2).columns))
       if uom =="Abs":
             d3=[{
-            'x': pd.to_datetime(np.array(prep_world_data(df2).columns)),
+            'x': x,
             'y': prep_world_data(df2)[prep_world_data(df2).index==country].values[0],
             'name': country
             } for country in li]
-            fig3=go.Figure(data=d3,layout=l_trend)
-            #fig3.update_layout(yaxis_type="log")
       else:
           d3=[{
-          'x': pd.to_datetime(np.array(prep_world_data(df2).columns)),
+          'x': x,
           'y': prep_world_capita(df2).loc[:, :df2.columns[-1]][prep_world_capita(df2).index==country].values[0],
           'name': country
           } for country in li]
-          fig3=go.Figure(data=d3,layout=l_trend)
+    fig3=go.Figure(data=d3,layout=l_trend)
     return fig3
 
 #Callbacks for heatmap
@@ -1224,23 +1216,19 @@ def update_chart(selection, trend):
     for c in selection:
         li.append(c)
     if trend == "Deaths":
-        data=go.Heatmap(
-        z=prep_rolling_avg(df2).loc[li],
-        x=pd.to_datetime(np.array(prep_rolling_avg(df2).columns)),
-        y=li,
-        colorscale='Blues',
-        colorbar={"thickness":10, "tickfont":{"size":10}},
-        )
-        fig4=go.Figure(data=data,layout=l_trend)
+        z=prep_rolling_avg(df2).loc[li]
+        x=pd.to_datetime(np.array(prep_rolling_avg(df2).columns))
     else:
-        data=go.Heatmap(
-        z=prep_rolling_avg(df1).loc[li],
-        x=pd.to_datetime(np.array(prep_rolling_avg(df1).columns)),
+        z=prep_rolling_avg(df1).loc[li]
+        x=pd.to_datetime(np.array(prep_rolling_avg(df1).columns))
+    data=go.Heatmap(
+        z=z,
+        x=x,
         y=li,
         colorscale='Blues',
         colorbar={"thickness":10, "tickfont":{"size":10}},
         )
-        fig4=go.Figure(data=data,layout=l_trend)
+    fig4=go.Figure(data=data,layout=l_trend)
     return fig4
 
 #Callback for US map UoM
@@ -1249,29 +1237,21 @@ def update_chart(selection, trend):
   [Input('uom-us-map', 'value')])
 def update_chart(units):
   if units=='per100k':
-    d=go.Scattergeo(
-    lon = prep_county_sum(df3,df4)['Long_'],
-    lat = prep_county_sum(df3,df4)['Lat'],
-    text = prep_county_sum(df3,df4)['text100'],
-    hoverinfo = 'text',
-    marker = dict(
-            size = 0.1*prep_county_sum(df3,df4)['Conf100'],
-            line_width=0.5,
-            sizemode = 'area'
-        ))
+    s = 0.1*prep_county_sum(df3,df4)['Conf100']
+    t = prep_county_sum(df3,df4)['text100']
   else:
-    d= go.Scattergeo(
+    s = 0.05*(prep_county_sum(df3,df4)['Confirmed'])
+    t = prep_county_sum(df3,df4)['text']
+  d= go.Scattergeo(
         lon = prep_county_sum(df3,df4)['Long_'],
         lat = prep_county_sum(df3,df4)['Lat'],
-        text = prep_county_sum(df3,df4)['text'],
+        text = t,
         hoverinfo = 'text',
         marker = dict(
-                size = 0.05*(prep_county_sum(df3,df4)['Confirmed']),
+                size = s,
                 line_width=0.5,
                 sizemode = 'area'
             ))
-
-
   fig6=go.Figure(data=d)
   fig6.update_layout(l_map)
   fig6.update_geos(scope="usa",
@@ -1350,26 +1330,18 @@ def update_chart(trend):
   [Input('uom-uk-map', 'value')])
 def update_chart(units):
   if units == "Abs":
-    d=go.Scattermapbox(
-    lon = prep_uk_scatter(england_cases, wales_cases, scot_cases)['long'],
-    lat = prep_uk_scatter(england_cases, wales_cases, scot_cases)['lat'],
-    text = prep_uk_scatter(england_cases, wales_cases, scot_cases)['text'],
-    hoverinfo = 'text',
-    marker = dict(
-            size = 0.05*prep_uk_scatter(england_cases, wales_cases, scot_cases)['Confirmed'],
-            #line_width=0.5,
-            sizemode = 'area',
-        symbol = 'circle'
-        ))
+    s = 0.05*prep_uk_scatter(england_cases, wales_cases, scot_cases)['Confirmed']
+    t = prep_uk_scatter(england_cases, wales_cases, scot_cases)['text']
   else:
-    d=go.Scattermapbox(
+    s = 0.2*prep_uk_scatter(england_cases, wales_cases, scot_cases)['Conf100']
+    t = prep_uk_scatter(england_cases, wales_cases, scot_cases)['text100']
+  d=go.Scattermapbox(
     lon = prep_uk_scatter(england_cases, wales_cases, scot_cases)['long'],
     lat = prep_uk_scatter(england_cases, wales_cases, scot_cases)['lat'],
-    text = prep_uk_scatter(england_cases, wales_cases, scot_cases)['text100'],
+    text = t,
     hoverinfo = 'text',
     marker = dict(
-            size = 0.2*prep_uk_scatter(england_cases, wales_cases, scot_cases)['Conf100'],
-            #line_width=0.5,
+            size = s,
             sizemode = 'area',
         symbol = 'circle'
         ))
@@ -1400,7 +1372,7 @@ def update_chart(trend):
 
 def update_chart(trend):
   if trend == 'Cases':
-    return "Cumulative cases"
+    return "Cumulative cases (excl. Northern Ireland)"
   else:
     return "Cumulative deaths"
 
@@ -1425,10 +1397,9 @@ def update_chart(trend):
 
 def update_chart(trend):
   if trend == 'Cases':
-    return "New cases"
+    return "New cases (excl. Northern Ireland)"
   else:
     return "New deaths"
-
 
 if __name__ == '__main__':
 	app.run_server()
