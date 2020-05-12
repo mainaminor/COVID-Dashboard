@@ -1,4 +1,4 @@
-# http://covidbasic111.herokuapp.com/
+# http://covid-ww.herokuapp.com/
 
 Interactive dashboard tracking the spread of COVID-19
 
