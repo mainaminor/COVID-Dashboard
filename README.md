@@ -1,6 +1,6 @@
 # http://covid-ww.herokuapp.com/
 
-Interactive dashboard tracking the spread of COVID-19
+Interactive dashboard built and deployed by me to track the spread of COVID-19
 
 View the finished product here: http://covid-ww.herokuapp.com/
 
