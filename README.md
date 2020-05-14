@@ -8,7 +8,7 @@ Open the .ipynb file for detail on the underlying data
 
 Open the .py file for the code driving the website layout and interactivity
 
-## Screenshots
+#### Screenshots
 The following are screenshots for the app in this repo:
 
 ![Dash1](screenshots/Dash1.png)
