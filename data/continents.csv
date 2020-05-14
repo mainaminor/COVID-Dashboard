@@ -25,7 +25,7 @@
 23,Benin,Western Africa,Africa
 24,Bermuda,Northern America,North America
 25,Bhutan,Southern Asia,Asia
-26,Bolivia (Plurinational State of),South America,South America
+26,Bolivia,South America,South America
 27,"Bonaire, Sint Eustatius and Saba",Caribbean,North America
 28,Bosnia and Herzegovina,Southern Europe,Europe
 29,Botswana,Southern Africa,Africa
@@ -33,7 +33,7 @@
 31,Brazil,South America,South America
 32,British Indian Ocean Territory,Eastern Africa,Africa
 33,British Virgin Islands,Caribbean,North America
-34,Brunei Darussalam,South-eastern Asia,Asia
+34,Brunei,South-eastern Asia,Asia
 35,Bulgaria,Eastern Europe,Europe
 36,Burkina Faso,Western Africa,Africa
 37,Burundi,Eastern Africa,Africa
@@ -52,17 +52,17 @@
 50,Cocos (Keeling) Islands,Australia and New Zealand,Oceania
 51,Colombia,South America,South America
 52,Comoros,Eastern Africa,Africa
-53,Congo,Middle Africa,Africa
+53,Congo (Brazzaville),Middle Africa,Africa
 54,Cook Islands,Polynesia,Oceania
 55,Costa Rica,Central America,North America
-56,Côte d’Ivoire,Western Africa,Africa
+56,Cote d'Ivoire,Western Africa,Africa
 57,Croatia,Southern Europe,Europe
 58,Cuba,Caribbean,North America
 59,Curaçao,Caribbean,North America
 60,Cyprus,Western Asia,Asia
 61,Czechia,Eastern Europe,Europe
 62,Democratic People's Republic of Korea,Eastern Asia,Asia
-63,Democratic Republic of the Congo,Middle Africa,Africa
+63,Congo (Kinshasa),Middle Africa,Africa
 64,Denmark,Northern Europe,Europe
 65,Djibouti,Eastern Africa,Africa
 66,Dominica,Caribbean,North America
@@ -107,7 +107,7 @@
 105,Iceland,Northern Europe,Europe
 106,India,Southern Asia,Asia
 107,Indonesia,South-eastern Asia,Asia
-108,Iran (Islamic Republic of),Southern Asia,Asia
+108,Iran,Southern Asia,Asia
 109,Iraq,Western Asia,Asia
 110,Ireland,Northern Europe,Europe
 111,Isle of Man,Northern Europe,Europe
@@ -122,7 +122,7 @@
 120,Kiribati,Micronesia,Oceania
 121,Kuwait,Western Asia,Asia
 122,Kyrgyzstan,Central Asia,Asia
-123,Lao People's Democratic Republic,South-eastern Asia,Asia
+123,Laos,South-eastern Asia,Asia
 124,Latvia,Northern Europe,Europe
 125,Lebanon,Western Asia,Asia
 126,Lesotho,Southern Africa,Africa
@@ -150,7 +150,7 @@
 148,Montserrat,Caribbean,North America
 149,Morocco,Northern Africa,Africa
 150,Mozambique,Eastern Africa,Africa
-151,Myanmar,South-eastern Asia,Asia
+151,Burma,South-eastern Asia,Asia
 152,Namibia,Southern Africa,Africa
 153,Nauru,Micronesia,Oceania
 154,Nepal,Southern Asia,Asia
@@ -178,11 +178,11 @@
 176,Portugal,Southern Europe,Europe
 177,Puerto Rico,Caribbean,North America
 178,Qatar,Western Asia,Asia
-179,Republic of Korea,Eastern Asia,Asia
-180,Republic of Moldova,Eastern Europe,Europe
+179,"Korea, South",Eastern Asia,Asia
+180,Moldova,Eastern Europe,Europe
 181,Réunion,Eastern Africa,Africa
 182,Romania,Eastern Europe,Europe
-183,Russian Federation,Eastern Europe,Europe
+183,Russia,Eastern Europe,Europe
 184,Rwanda,Eastern Africa,Africa
 185,Saint Barthélemy,Caribbean,North America
 186,Saint Helena,Western Africa,Africa
@@ -217,7 +217,7 @@
 215,Svalbard and Jan Mayen Islands,Northern Europe,Europe
 216,Sweden,Northern Europe,Europe
 217,Switzerland,Western Europe,Europe
-218,Syrian Arab Republic,Western Asia,Asia
+218,Syria,Western Asia,Asia
 219,Tajikistan,Central Asia,Asia
 220,Thailand,South-eastern Asia,Asia
 221,Timor-Leste,South-eastern Asia,Asia
@@ -233,16 +233,16 @@
 231,Uganda,Eastern Africa,Africa
 232,Ukraine,Eastern Europe,Europe
 233,United Arab Emirates,Western Asia,Asia
-234,United Kingdom of Great Britain and Northern Ireland,Northern Europe,Europe
-235,United Republic of Tanzania,Eastern Africa,Africa
+234,United Kingdom,Northern Europe,Europe
+235,Tanzania,Eastern Africa,Africa
 236,United States Minor Outlying Islands,Micronesia,Oceania
 237,United States of America,Northern America,North America
 238,United States Virgin Islands,Caribbean,North America
 239,Uruguay,South America,South America
 240,Uzbekistan,Central Asia,Asia
 241,Vanuatu,Melanesia,Oceania
-242,Venezuela (Bolivarian Republic of),South America,South America
-243,Viet Nam,South-eastern Asia,Asia
+242,Venezuela,South America,South America
+243,Vietnam,South-eastern Asia,Asia
 244,Wallis and Futuna Islands,Polynesia,Oceania
 245,Western Sahara,Northern Africa,Africa
 246,Yemen,Western Asia,Asia
