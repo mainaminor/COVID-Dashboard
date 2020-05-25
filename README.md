@@ -13,6 +13,8 @@ The following are screenshots for the app in this repo:
 
 ![Dash1](screenshots/Dash1.png)
 
+![Dash1b](screenshots/Dash1b.png)
+
 ![Dash2](screenshots/Dash2.png)
 
 ![Dash3](screenshots/Dash3.png)
