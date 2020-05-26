@@ -1,8 +1,8 @@
-### http://covid-ww.herokuapp.com/
+### https://covid-ww.herokuapp.com/
 
 Interactive dashboard built and deployed by me to track the spread of COVID-19
 
-View the finished product here: http://covid-ww.herokuapp.com/
+View the finished product here: https://covid-ww.herokuapp.com/
 
 Open the .ipynb file for detail on the underlying data 
 
