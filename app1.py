@@ -3,7 +3,6 @@ import dash_core_components as dcc
 import dash_html_components as html
 from dash.dependencies import Input, Output
 import plotly.graph_objs as go
-import plotly.express as px
 import pandas as pd
 import numpy as np
 
@@ -34,8 +33,10 @@ world_newcases_cases=pd.read_csv("data/world_newcases_cases.csv").set_index("Con
 world_newcases_deaths=pd.read_csv("data/world_newcases_deaths.csv").set_index("Continent")
 world_capita_cases=pd.read_csv("data/world_capita_cases.csv").set_index("Unnamed: 0")
 world_capita_deaths=pd.read_csv("data/world_capita_deaths.csv").set_index("Unnamed: 0")
-rolling_avg_cases=pd.read_csv("data/rolling_avg_cases.csv").set_index("Unnamed: 0")
-rolling_avg_deaths=pd.read_csv("data/rolling_avg_deaths.csv").set_index("Unnamed: 0")
+rolling_capita_cases=pd.read_csv("data/rolling_capita_cases.csv").set_index("Unnamed: 0")
+rolling_capita_deaths=pd.read_csv("data/rolling_capita_deaths.csv").set_index("Unnamed: 0")
+rolling_avg_cases=pd.read_csv("data/rolling_avg_cases.csv").set_index("Country/Region")
+rolling_avg_deaths=pd.read_csv("data/rolling_avg_deaths.csv").set_index("Country/Region")
 
 
 world_R=pd.read_csv("data/world_r.csv").set_index("Country/Region")
@@ -46,6 +47,8 @@ uk_R=pd.read_csv("data/uk_r.csv").set_index("ReportingArea")
 options = []
 for tic in world_data_cases.index:
   options.append({'label':tic, 'value':tic})
+
+li2=list(countries_data[countries_data["PopTotal"]>5000].sample(100, replace=True, random_state=9).index)  
 
 
 
@@ -219,7 +222,7 @@ def make_fig_4(d):
                           name=d.index[5])]
                         )
   fig.update_layout(barmode='stack')
-  fig.update_layout(l_bar_w)
+  fig.update_layout(l_bar_s)
   return fig
 
 
@@ -246,7 +249,7 @@ def make_fig_5(d):
                         ]
                         )
   fig.update_layout(barmode='stack')
-  fig.update_layout(l_bar_w)
+  fig.update_layout(l_bar_s)
   return fig
 
 #County total cases
@@ -341,24 +344,6 @@ def make_fig_15(d1,d2,d3):
                         )
   fig.update_layout(barmode='stack')
   fig.update_layout(l_bar_s)
-  return fig
-
-## NEW WORLD CHARTS ##
-
-#ANIMATED BUBBLE CHART
-def make_fig_1b(d1, d2):
-  a=world_data_cases.reset_index().melt(id_vars="Country/Region", var_name='Date', value_name='Cases')
-  b=world_data_deaths.reset_index().melt(id_vars="Country/Region", var_name='Date', value_name='Deaths')
-  abc=a.merge(b).merge(continents,left_on="Country/Region", right_on="Country").drop(columns=["Country", "Region"])
-  fig=px.scatter(abc, x="Cases", y="Deaths", 
-               animation_frame="Date", animation_group="Country/Region",
-               size="Cases", hover_name="Country/Region", text="Code",
-               log_x=True,size_max=80, log_y=True, 
-               range_x=[5000,5000000], range_y=[50,500000]
-              )
-  #fig.update_layout(template="plotly_white")
-  fig.update_layout(l_bub_s)
-  fig.update_traces(textposition='middle right')
   return fig
 
 #RCHART
@@ -536,40 +521,6 @@ app.layout = html.Div([
         className='row',
         style={'paddingTop':'2.5%', 'paddingBottom':'2.5%'}
         ),
-      ],
-      className='six columns',
-      style={'paddingRight':'1%'},
-      ),
-    ],
-    className='row'
-    ),
-  
-  #BLOCK FOR IMPACT BY COUNTRY  
-  html.Div([#row for header
-    html.H6('Impact by country',
-        style = {'margin-bottom':'0', 'paddingBottom':'0','font-size': '1.5rem'}),
-        ],
-        className='row flex-display',
-        style={'padding':'1.5%'}
-        ),
-  html.Div([#row for body
-    html.Div([# seven columns for bubble chart
-      html.Div([ # row for bubble chart headers
-        html.P("Cases vs Deaths",
-          style={'font-size': '1.2rem','margin':0}, 
-          #className='six columns'
-          ),
-        html.P('Click "Play" button to start animation. Click on "1/22/20" in the slider bar to re-set chart',
-        style={'color':'#696969','font-size': '1rem', 'font-style':'italic'})
-        ],
-        className='row'
-        ),
-      dcc.Graph(id= "bubbles", config=conf, figure=make_fig_1b(world_data_cases, world_data_deaths))
-      ],
-      className='six columns',
-      style={'paddingLeft':'1.5%','paddingBottom':'2.5%','paddingTop':'2.5%'}
-      ),
-    html.Div([# five columns for bar charts
       html.Div([#row for charts and headers
         html.Div([#eight columns for worst hit
           html.Div([#row for headers
@@ -596,8 +547,7 @@ app.layout = html.Div([
               className='row'
               ),
             ],
-            className='row',
-            style={'padding':'1%'}
+            className='row'
             ),
           html.Div([#row for charts
             html.Div([ # row for charts themselves
@@ -649,7 +599,8 @@ app.layout = html.Div([
           style={'padding':'1%','margin-bottom':'5%'}
           ),
         ],
-        className='row'
+        className='row',
+        style={'paddingTop':'2.5%', 'paddingBottom':'2.5%'}
         ),
       html.Div([#footnote
         html.P('*number of people each new victim infects',
@@ -660,11 +611,12 @@ app.layout = html.Div([
         ),
       ],
       className='six columns',
-      style={'paddingBottom':'5%','paddingTop':'2.5%'}
+      style={'paddingRight':'1%','paddingLeft':'1%'},
       ),
     ],
     className='row'
     ),
+  
 
   ##BLOCK FOR HEATMAP AND COUNTRY TREND
   html.Div([#row for header
@@ -675,7 +627,7 @@ app.layout = html.Div([
       dcc.Dropdown(
         id='country-select',
         options = options,
-        value = countries_data.sort_values(by="Confirmed", ascending=False).index[:10],
+        value = countries_data.sort_values(by="Confirmed", ascending=False).index[:5],
         multi = True)
       ], 
       className="eight columns", 
@@ -702,7 +654,7 @@ app.layout = html.Div([
   html.Div([#row for body
     html.Div([#six columns for line chart
       html.H6(id="line-header",style = {'margin':0,'font-size':'1.5rem'}),
-      html.P('Click on legend item to hide line', style={'color':'#696969','font-size': '1rem', 'font-style':'italic'}),
+      #html.P('Click on legend item to hide line', style={'color':'#696969','font-size': '1rem', 'font-style':'italic'}),
       dcc.RadioItems(
         id="uom",
         options=[
@@ -718,7 +670,15 @@ app.layout = html.Div([
       ),
     html.Div([#six columns for heatmap
       html.H6(id="heatmap-header", style = {'font-size':'1.5rem'}),
-      html.H6("new cases per 100k pop per day (5d rolling average)", style = {'font-size':'1rem'}),
+      #html.H6("new cases per 100k pop per day (7d rolling average)", style = {'font-size':'1rem'}),
+      dcc.RadioItems(
+        id="uom2",
+        options=[
+        {'label': 'Absolute', 'value': 'Abs'},
+        {'label': 'per 100k pop.', 'value': 'per100k'}],
+        value='per100k',
+        labelStyle={'display': 'inline-block'},
+        style={'font-size': '1rem'}),
       dcc.Graph(id='heatmap',config=conf, style={'margin':'0%','padding': '2%'})
       ], 
       className='six columns',style={'padding':'2%'}
@@ -940,7 +900,7 @@ app.layout = html.Div([
         ),
       ],
       className='six columns',
-      style={'paddingRight':'1%'}
+      style={'paddingRight':'1%','paddingLeft':'1%'},
       ),
     ],
     className='row'
@@ -1163,7 +1123,7 @@ app.layout = html.Div([
         ),
       ],
       className='six columns',
-      style={'paddingRight':'0.5%'}
+      style={'paddingLeft': '1%','paddingRight':'0.5%'}
       ),
     ],
     className='row'
@@ -1294,30 +1254,72 @@ def update_chart(selection, trend, uom):
           d3=[{
           'x': x,
           'y': world_data_cases[world_data_cases.index==country].values[0],
-          'name': country
-          } for country in li]
+          'name': country,
+          'line': {'color':'#D3D3D3', 'width': 1},
+          'showlegend': False
+          } for country in li2]
+          fig3=go.Figure(data=d3,layout=l_trend)
+          for i in li:
+            fig3.add_trace(go.Scatter({
+                'x': x,
+                'y':world_data_cases[world_data_cases.index==i].values[0],
+                'name': i}
+                )
+            )
+          return fig3
       else:
           d3=[{
           'x': x,
-          'y': world_capita_cases.loc[:, :world_data_cases.columns[-1]][world_capita_cases.index==country].values[0],
-          'name': country
-          } for country in li]
+          'y': world_capita_cases.iloc[:,:-9][world_capita_cases.index==country].values[0],
+          'name': country,
+          'line': {'color':'#D3D3D3', 'width': 1},
+          'showlegend': False
+          } for country in li2]
+          fig3=go.Figure(data=d3,layout=l_trend)
+          for i in li:
+            fig3.add_trace(go.Scatter({
+                'x': x,
+                'y':world_capita_cases.iloc[:,:-9][world_capita_cases.index==i].values[0],
+                'name': i}
+                )
+            )
+          return fig3
     else:
       x=pd.to_datetime(np.array(world_data_deaths.columns))
       if uom =="Abs":
-            d3=[{
-            'x': x,
-            'y': world_data_deaths[world_data_deaths.index==country].values[0],
-            'name': country
-            } for country in li]
+          d3=[{
+          'x': x,
+          'y': world_data_deaths[world_data_deaths.index==country].values[0],
+          'name': country,
+          'line': {'color':'#D3D3D3', 'width': 1},
+          'showlegend': False
+          } for country in li2]
+          fig3=go.Figure(data=d3,layout=l_trend)
+          for i in li:
+            fig3.add_trace(go.Scatter({
+                'x': x,
+                'y':world_data_deaths[world_data_deaths.index==i].values[0],
+                'name': i}
+                )
+            )
+          return fig3
       else:
           d3=[{
           'x': x,
-          'y': world_capita_deaths.loc[:, :world_data_deaths.columns[-1]][world_capita_deaths.index==country].values[0],
-          'name': country
-          } for country in li]
-    fig3=go.Figure(data=d3,layout=l_trend)
-    return fig3
+          'y': world_capita_deaths.iloc[:,:-9][world_capita_deaths.index==country].values[0],
+          'name': country,
+          'line': {'color':'#D3D3D3', 'width': 1},
+          'showlegend': False
+          } for country in li2]
+          fig3=go.Figure(data=d3,layout=l_trend)
+          for i in li:
+            fig3.add_trace(go.Scatter({
+                'x': x,
+                'y':world_capita_deaths.iloc[:,:-9][world_capita_deaths.index==i].values[0],
+                'name': i}
+                )
+            )
+          return fig3
 
 #Callbacks for heatmap
 @app.callback(
@@ -1326,33 +1328,93 @@ def update_chart(selection, trend, uom):
 
 def update_header(trend):
   if trend=="Cases":
-    return "Infection Rate"
+    return "New Cases (7d rolling avg)"
   else:
-    return "Death Rate"
+    return "New Deaths (7d rolling avg)"
 
 @app.callback(
     Output('heatmap', 'figure'),
     [Input('country-select', 'value'),
-    Input('trend', 'value')])
-def update_chart(selection, trend):
+    Input('trend', 'value'),
+    Input('uom2', 'value')])
+
+def update_chart(selection, trend, uom):
     li=[]
     for c in selection:
         li.append(c)
-    if trend == "Deaths":
-        z=rolling_avg_deaths.loc[li]
-        x=pd.to_datetime(np.array(rolling_avg_deaths.columns))
+    if trend == "Cases":
+      x=pd.to_datetime(np.array(rolling_avg_cases.columns))
+      if uom =="Abs":
+          d3=[{
+          'x': x,
+          'y': rolling_avg_cases[rolling_avg_cases.index==country].values[0],
+          'name': country,
+          'line': {'color':'#D3D3D3', 'width': 1},
+          'showlegend': False
+          } for country in li2]
+          fig3=go.Figure(data=d3,layout=l_trend)
+          for i in li:
+            fig3.add_trace(go.Scatter({
+                'x': x,
+                'y':rolling_avg_cases[rolling_avg_cases.index==i].values[0],
+                'name': i}
+                )
+            )
+          return fig3
+      else:
+          d3=[{
+          'x': x,
+          'y': rolling_capita_cases[rolling_capita_cases.index==country].values[0],
+          'name': country,
+          'line': {'color':'#D3D3D3', 'width': 1},
+          'showlegend': False
+          } for country in li2]
+          fig3=go.Figure(data=d3,layout=l_trend)
+          for i in li:
+            fig3.add_trace(go.Scatter({
+                'x': x,
+                'y':rolling_capita_cases[rolling_capita_cases.index==i].values[0],
+                'name': i}
+                )
+            )
+          return fig3
     else:
-        z=rolling_avg_cases.loc[li]
-        x=pd.to_datetime(np.array(rolling_avg_cases.columns))
-    data=go.Heatmap(
-        z=z,
-        x=x,
-        y=li,
-        colorscale='Blues',
-        colorbar={"thickness":10, "tickfont":{"size":10}},
-        )
-    fig4=go.Figure(data=data,layout=l_trend)
-    return fig4
+      x=pd.to_datetime(np.array(rolling_avg_deaths.columns))
+      if uom =="Abs":
+          d3=[{
+          'x': x,
+          'y': rolling_avg_deaths[rolling_avg_deaths.index==country].values[0],
+          'name': country,
+          'line': {'color':'#D3D3D3', 'width': 1},
+          'showlegend': False
+          } for country in li2]
+          fig3=go.Figure(data=d3,layout=l_trend)
+          for i in li:
+            fig3.add_trace(go.Scatter({
+                'x': x,
+                'y':rolling_avg_deaths[rolling_avg_deaths.index==i].values[0],
+                'name': i}
+                )
+            )
+          return fig3
+      else:
+          d3=[{
+          'x': x,
+          'y': rolling_capita_deaths[rolling_capita_deaths.index==country].values[0],
+          'name': country,
+          'line': {'color':'#D3D3D3', 'width': 1},
+          'showlegend': False
+          } for country in li2]
+          fig3=go.Figure(data=d3,layout=l_trend)
+          for i in li:
+            fig3.add_trace(go.Scatter({
+                'x': x,
+                'y':rolling_capita_deaths[rolling_capita_deaths.index==i].values[0],
+                'name': i}
+                )
+            )
+          return fig3
+
 
 #Callback for US map UoM
 @app.callback(
