@@ -5,6 +5,8 @@ from dash.dependencies import Input, Output
 import plotly.graph_objs as go
 import pandas as pd
 import numpy as np
+import requests
+import io
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -14,6 +16,31 @@ external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=external_stylesheets, 
   meta_tags=[{"name": "viewport", "content": "width=device-width"}]
   )
+
+app.index_string = '''
+<!DOCTYPE html>
+<html>
+    <head>
+        {%metas%}
+        <title>COVID-19 Global Spread</title>
+        <meta property="og:title" content="Global spread of the novel coronavirus">
+        <meta property="og:image" content="assets/covid_dash.png">
+        <meta name="description" property="og:description" content="An interactive mini-dashboard built and deployed by me in Python, giving a summary of coronavirus spread, with deep dives for the United States and United Kingdom.">
+        <meta name="author" content="Anthony S N Maina">
+        {%favicon%}
+        {%css%}
+    </head>
+    <body>
+        {%app_entry%}
+        <footer>
+            {%config%}
+            {%scripts%}
+            {%renderer%}
+        </footer>
+    </body>
+</html>
+'''
+
 server = app.server
 
 ################################################
@@ -21,27 +48,141 @@ server = app.server
 ################################################
 
 continents=pd.read_csv("data/continents.csv").drop(columns="Unnamed: 0")
-
 df_p=pd.read_csv("data/worldpop.csv").set_index("Location")
+ctrs=pd.read_csv('data/countries.csv').set_index("name")
 
-countries_data=pd.read_csv("data/countries_data.csv").set_index("Unnamed: 0")
-world_data_cases=pd.read_csv("data/world_data_cases.csv").set_index("Country/Region")
-world_data_deaths=pd.read_csv("data/world_data_deaths.csv").set_index("Country/Region")
-world_trend_cases=pd.read_csv("data/world_trend_cases.csv").set_index("Continent")
-world_trend_deaths=pd.read_csv("data/world_trend_deaths.csv").set_index("Continent")
-world_newcases_cases=pd.read_csv("data/world_newcases_cases.csv").set_index("Continent")
-world_newcases_deaths=pd.read_csv("data/world_newcases_deaths.csv").set_index("Continent")
-world_capita_cases=pd.read_csv("data/world_capita_cases.csv").set_index("Unnamed: 0")
-world_capita_deaths=pd.read_csv("data/world_capita_deaths.csv").set_index("Unnamed: 0")
-rolling_capita_cases=pd.read_csv("data/rolling_capita_cases.csv").set_index("Unnamed: 0")
-rolling_capita_deaths=pd.read_csv("data/rolling_capita_deaths.csv").set_index("Unnamed: 0")
-rolling_avg_cases=pd.read_csv("data/rolling_avg_cases.csv").set_index("Country/Region")
-rolling_avg_deaths=pd.read_csv("data/rolling_avg_deaths.csv").set_index("Country/Region")
+################################################
+
+url_1='https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv'
+url_2='https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_global.csv'
+df1=pd.read_csv(url_1)
+df2=pd.read_csv(url_2)
+
+################################################
+
+def prep_world_data(df):
+    df=df.groupby(by="Country/Region").sum()
+    df.drop(labels=["Lat", "Long"], axis=1, inplace=True)
+    df.loc[:,:str(df.columns[-1])]=np.clip(df.loc[:,:str(df.columns[-1])], a_min=0, a_max=None)
+    df.rename(index={"US": 'United States of America'}, inplace=True)
+    return df
+
+def prep_countries_data(d1,d2):
+    d1=prep_world_data(d1)
+    d2=prep_world_data(d2)
+    countries=ctrs.merge(d1[d1.columns[-1]], left_index=True, right_index=True)
+    countries.rename(columns={d1.columns[-1]: "Confirmed"}, inplace=True)
+    countries=countries.merge(d2[d2.columns[-1]], left_index=True, right_index=True)
+    countries.rename(columns={d2.columns[-1]: "Deaths"}, inplace=True)
+    countries=countries.merge(df_p["PopTotal"], left_index=True, right_index=True)
+    countries["Conf100"]=round(countries["Confirmed"]*100/countries["PopTotal"])
+    countries["Deaths100"]=round(countries["Deaths"]*100/countries["PopTotal"])
+    countries["Mortality"]=round(countries["Deaths"]*100/countries["Confirmed"],2)
+    countries["text"]= countries.index +'<br>' + "Cases: " + countries["Confirmed"].astype('str') + '<br>' + "Deaths: "+ countries["Deaths"].astype('str')
+    countries["text100"]= countries.index +'<br>' + "Cases per 100k pop.: " + countries["Conf100"].astype('str') + '<br>' + "Deaths per 100k pop.: "+ countries["Deaths100"].astype('str')
+    return countries
+
+def prep_world_trend(d):
+    d=prep_world_data(d)
+    world_trend=d.merge(continents, left_index=True, right_on="Country").groupby("Continent").sum()
+    return world_trend
+
+def prep_world_newcases(d):
+    df=prep_world_trend(d)
+    world_newcases=pd.DataFrame(index=df.index,columns=list(df.columns[1:]))
+    for i in range(len(df.columns)-1):
+        f=df[df.columns[i+1]]-df[df.columns[i]]
+        world_newcases[world_newcases.columns[i]]=f
+    return world_newcases
+
+def prep_country_newcases(d):
+    df=prep_world_data(d)
+    country_newcases=pd.DataFrame(index=df.index,columns=list(df.columns[1:]))
+    for i in range(len(df.columns)-1):
+        f=df[df.columns[i+1]]-df[df.columns[i]]
+        country_newcases[country_newcases.columns[i]]=f
+    return country_newcases
+
+##HEATMAP##
+
+def prep_rolling_avg (d):
+    d1=prep_world_data(d)
+    sr_7d=pd.DataFrame(index=d1.index,columns=list(d1.columns[7:]))
+    for i in range(len(d1.columns)-7):
+        f=(d1[d1.columns[i+7]]-d1[d1.columns[i]])/7
+        sr_7d[sr_7d.columns[i]]=f
+    return sr_7d
+    
+
+def prep_world_capita (d):
+    d1=prep_world_data(d)
+    t=d1.merge(df_p, left_index=True, right_index=True)
+    a=t.loc[:, :d1.columns[-1]].values.transpose()
+    b=100/t["PopTotal"].values
+    c=a*b
+    t.loc[:, :d1.columns[-1]]=c.transpose()
+    return t
+
+def prep_rolling_capita(d):
+    d1=prep_world_capita(d)
+    d11=prep_world_data(d)
+    sr_7d=pd.DataFrame(index=d1.index,columns=list(d11.columns[7:]))
+    for i in range(len(d11.columns)-7):
+        f=(d1[d1.columns[i+7]]-d1[d1.columns[i]])/7
+        sr_7d[sr_7d.columns[i]]=f
+    return sr_7d
+
+##################################################
 
 
-world_R=pd.read_csv("data/world_r.csv").set_index("Country/Region")
-states_R=pd.read_csv("data/states_r.csv").set_index("Province_State")
-uk_R=pd.read_csv("data/uk_r.csv").set_index("ReportingArea")
+try:
+  countries_data= prep_countries_data(df1, df2)
+  world_data_cases= prep_world_data(df1)
+  world_data_deaths= prep_world_data(df2)
+  world_trend_cases= prep_world_trend(df1)
+  world_trend_deaths= prep_world_trend(df2)
+  world_newcases_cases= prep_world_newcases(df1)
+  world_newcases_deaths= prep_world_newcases(df2)
+  world_capita_cases= prep_world_capita(df1)
+  world_capita_deaths= prep_world_capita(df2)
+  rolling_avg_cases= prep_rolling_avg(df1)
+  rolling_avg_deaths= prep_rolling_avg(df2)
+  rolling_capita_cases= prep_rolling_capita(df1)
+  rolling_capita_deaths= prep_rolling_capita(df2)
+  country_newcases_cases= prep_country_newcases(df1)
+  country_newcases_deaths= prep_country_newcases(df2)
+  countries_data.to_csv("data/countries_data.csv")
+  world_data_cases.to_csv("data/world_data_cases.csv")
+  world_data_deaths.to_csv("data/world_data_deaths.csv")
+  world_trend_cases.to_csv("data/world_trend_cases.csv")
+  world_trend_deaths.to_csv("data/world_trend_deaths.csv")
+  world_newcases_cases.to_csv("data/world_newcases_cases.csv")
+  world_newcases_deaths.to_csv("data/world_newcases_deaths.csv")
+  world_capita_cases.to_csv("data/world_capita_cases.csv")
+  world_capita_deaths.to_csv("data/world_capita_deaths.csv")
+  rolling_avg_cases.to_csv("data/rolling_avg_cases.csv")
+  rolling_avg_deaths.to_csv("data/rolling_avg_deaths.csv")
+  rolling_capita_cases.to_csv("data/rolling_capita_cases.csv")
+  rolling_avg_deaths.to_csv("data/rolling_capita_deaths.csv")
+  country_newcases_cases.to_csv("data/country_newcases_cases.csv")
+  country_newcases_deaths.to_csv("data/country_newcases_deaths.csv")
+except:
+  countries_data=pd.read_csv("data/countries_data.csv").set_index("Unnamed: 0")
+  world_data_cases=pd.read_csv("data/world_data_cases.csv").set_index("Country/Region")
+  world_data_deaths=pd.read_csv("data/world_data_deaths.csv").set_index("Country/Region")  
+  world_trend_cases=pd.read_csv("data/world_trend_cases.csv").set_index("Continent")
+  world_trend_deaths=pd.read_csv("data/world_trend_deaths.csv").set_index("Continent")
+  world_newcases_cases=pd.read_csv("data/world_newcases_cases.csv").set_index("Continent")
+  world_newcases_deaths=pd.read_csv("data/world_newcases_deaths.csv").set_index("Continent")
+  world_capita_cases=pd.read_csv("data/world_capita_cases.csv").set_index("Unnamed: 0")
+  world_capita_deaths=pd.read_csv("data/world_capita_deaths.csv").set_index("Unnamed: 0")
+  rolling_capita_cases=pd.read_csv("data/rolling_capita_cases.csv").set_index("Unnamed: 0")
+  rolling_capita_deaths=pd.read_csv("data/rolling_capita_deaths.csv").set_index("Unnamed: 0")
+  rolling_avg_cases=pd.read_csv("data/rolling_avg_cases.csv").set_index("Country/Region")
+  rolling_avg_deaths=pd.read_csv("data/rolling_avg_deaths.csv").set_index("Country/Region")
+  countries_newcases_cases=pd.read_csv("data/countries_newcases_cases.csv").set_index("Unnamed: 0")
+  countries_newcases_deaths=pd.read_csv("data/countries_newcases_deaths.csv").set_index("Unnamed: 0")
+
 
 
 options = []
@@ -56,45 +197,113 @@ li2=list(countries_data[countries_data["PopTotal"]>5000].sample(100, replace=Tru
 #### DATA FOR USA ANALYSES #####################
 ################################################
 
-us_regions=pd.read_csv('data/us_regions.csv').drop("Unnamed: 0", axis=1)
+url_3='https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_US.csv'
+url_4='https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_deaths_US.csv'
+url_5='https://raw.githubusercontent.com/cphalpert/census-regions/master/us%20census%20bureau%20regions%20and%20divisions.csv'
+
+df3=pd.read_csv(url_3)
+df4=pd.read_csv(url_4).drop("Population", axis=1)
+us_regions=pd.read_csv('data/us_regions.csv').drop(columns="Unnamed: 0")
 us_pop=pd.read_csv('data/us_pop.csv')
 
-county_data_cases=pd.read_csv("data/county_data_cases.csv").drop(columns="Unnamed: 0")
-county_data_deaths=pd.read_csv("data/county_data_deaths.csv").drop(columns="Unnamed: 0")
-state_data_cases=pd.read_csv("data/state_data_cases.csv").set_index("Province_State")
-state_data_deaths=pd.read_csv("data/state_data_deaths.csv").set_index("Province_State")
-county_sum=pd.read_csv("data/county_sum.csv").drop(columns="Unnamed: 0")
-state_sum=pd.read_csv("data/state_sum.csv").set_index("STNAME")
-us_trend_cases=pd.read_csv("data/us_trend_cases.csv").set_index("Region")
-us_trend_deaths=pd.read_csv("data/us_trend_deaths.csv").set_index("Region")
-us_newcases_cases=pd.read_csv("data/us_newcases_cases.csv").set_index("Region")
-us_newcases_deaths=pd.read_csv("data/us_newcases_deaths.csv").set_index("Region")
+def prep_county_data(d):
+    df=d.drop(labels=["UID","iso2", "iso3","Province_State","Country_Region"], axis=1)
+    df.drop(df[df["Admin2"].isnull()].index, inplace=True)
+    df.drop(df[df["FIPS"].isnull()].index, inplace=True)
+    return df   
 
+def prep_state_data(d):
+    df=d.groupby(by="Province_State").sum()
+    df.rename(index={"District of Columbia": "D.C."}, inplace=True)
+    df.drop(labels=["UID", "code3", "FIPS", "Lat", "Long_"], axis=1, inplace=True)
+    df.loc[:,:str(df.columns[-1])]=np.clip(df.loc[:,:str(df.columns[-1])], a_min=0, a_max=None)
+    return df
 
-################################################
-#### DATA FOR UK ANALYSES ######################
-################################################
+def prep_county_sum(d1,d2):
+    dd1=prep_county_data(d1)
+    dd2=prep_county_data(d2)
+    df=dd1[["Admin2", "FIPS", "Lat", "Long_", dd1.columns[-1]]]
+    df=df.rename(columns={dd1.columns[-1]: "Confirmed"})
+    df=df.merge(dd2[["FIPS",dd2.columns[-1]]], on="FIPS")
+    df=df.rename(columns={dd2.columns[-1]: "Deaths"})
+    df=df.merge(us_pop[["FIPS", "STNAME","CTYNAME", "POPESTIMATE2019", "Abbreviation"]], on="FIPS")
+    df["Mortality"]=round(df["Deaths"]*100/df["Confirmed"],2)
+    df["Conf100"]=df["Confirmed"]*100000/df["POPESTIMATE2019"]
+    df["Deaths100"]=df["Deaths"]*100000/df["POPESTIMATE2019"]
+    df["Ctylabel"]=df["Admin2"]+ ", "+df["Abbreviation"]
+    df["text"]= df["Ctylabel"] + '<br>Cases: ' + (round(df['Confirmed'],1).astype(str))+ '<br>Deaths: ' + (round(df['Deaths'],1).astype(str))
+    df["text100"]= df["Ctylabel"] + '<br>Cases per 100k pop: ' + (round(df['Conf100'],1).astype(str))+ '<br>Deaths per 100k pop: ' + (round(df['Deaths100'],1).astype(str))
+    return df
 
+def prep_state_sum(d1,d2):
+    df=prep_county_sum(d1,d2)
+    df=df[["STNAME", "Confirmed", "Deaths", "POPESTIMATE2019"]].groupby("STNAME").sum()
+    df.rename(index={"District of Columbia": "D.C."}, inplace=True)
+    df["Conf100"]=df["Confirmed"]*100000/df["POPESTIMATE2019"]
+    df["Deaths100"]=df["Deaths"]*100000/df["POPESTIMATE2019"]
+    df["Mortality"]=round(df["Deaths"]*100/df["Confirmed"],2)
+    return df
 
-england_cases=pd.read_csv("data/england_cases.csv").drop("Unnamed: 0", axis=1)
-wales_cases=pd.read_csv("data/wales_cases.csv").drop("Unnamed: 0", axis=1)
-scot_cases=pd.read_csv("data/scot_cases.csv").drop("Unnamed: 0", axis=1)
-eng_trend=pd.read_csv("data/eng_trend.csv").drop("Unnamed: 0", axis=1)
-wales_trend=pd.read_csv("data/wales_trend.csv").drop("Unnamed: 0", axis=1)
-scot_trend=pd.read_csv("data/scot_trend.csv").drop("Unnamed: 0", axis=1)
-uk_map=pd.read_csv("data/uk_map.csv").drop(columns="Unnamed: 0").groupby(by="ReportingArea").mean()
-uk_pop=pd.read_csv("data/uk_pop.csv").drop(columns="Unnamed: 0").groupby(by="ReportingArea").sum()
-uk_scatter=pd.read_csv("data/uk_scatter.csv").set_index("ReportingArea")
-ewss=pd.read_csv("data/ews.csv").drop(columns="Unnamed: 0")
-ews=ewss.drop(columns="Specimen date")
-ews["Specimen date"]=pd.to_datetime(ewss["Specimen date"])
+def prep_us_trend(d):
+    df=prep_state_data(d)
+    df=df.merge(us_regions, left_index=True, right_on="State")
+    df=df.groupby("Region").sum()
+    return df
 
-e=pd.to_datetime(eng_trend["Specimen date"])
-w=pd.to_datetime(wales_trend["Specimen date"])
-s=pd.to_datetime(scot_trend["Specimen date"])
+def prep_us_newcases(d):
+    df=prep_us_trend(d)
+    dff=pd.DataFrame(index=df.index,columns=list(df.columns[1:]))
+    for i in range(len(df.columns)-1):
+        f=df[df.columns[i+1]]-df[df.columns[i]]
+        dff[dff.columns[i]]=f
+    return dff
 
-max_date=min(max(e), max(w), max(s))
-min_date=max(min(e), min(w), min(s))
+def prep_state_newcases(d):
+    df=prep_state_data(d)
+    dff=pd.DataFrame(index=df.index,columns=list(df.columns[1:]))
+    for i in range(len(df.columns)-1):
+        f=df[df.columns[i+1]]-df[df.columns[i]]
+        dff[dff.columns[i]]=f
+    return dff
+
+try:
+  county_data_cases= prep_county_data(df3)
+  county_data_deaths= prep_county_data(df4)
+  state_data_cases= prep_state_data(df3)
+  state_data_deaths= prep_state_data(df4)
+  county_sum= prep_county_sum(df3, df4)
+  state_sum= prep_state_sum(df3, df4)
+  us_trend_cases= prep_us_trend(df3)
+  us_trend_deaths= prep_us_trend(df4)
+  us_newcases_cases= prep_us_newcases(df3)
+  us_newcases_deaths= prep_us_newcases(df4)
+  state_newcases_cases=prep_state_newcases(df3)
+  state_newcases_deaths=prep_state_newcases(df4)
+  county_data_cases.to_csv("data/county_data_cases.csv")
+  county_data_deaths.to_csv("data/county_data_deaths.csv")
+  state_data_cases.to_csv("data/state_data_cases.csv")
+  state_data_deaths.to_csv("data/state_data_deaths.csv")
+  county_sum.to_csv("data/county_sum.csv")
+  state_sum.to_csv("data/state_sum.csv")
+  us_trend_cases.to_csv("data/us_trend_cases.csv")
+  us_trend_deaths.to_csv("data/us_trend_deaths.csv")
+  us_newcases_cases.to_csv("data/us_newcases_cases.csv")
+  us_newcases_deaths.to_csv("data/us_newcases_deaths.csv")
+  state_newcases_cases.to_csv("data/state_newcases_cases")
+  state_newcases_deaths.to_csv("data/state_newcases_deaths")
+except:
+  county_data_cases=pd.read_csv("data/county_data_cases.csv").drop(columns="Unnamed: 0")
+  county_data_deaths=pd.read_csv("data/county_data_deaths.csv").drop(columns="Unnamed: 0")
+  state_data_cases=pd.read_csv("data/state_data_cases.csv").set_index("Province_State")
+  state_data_deaths=pd.read_csv("data/state_data_deaths.csv").set_index("Province_State")
+  county_sum=pd.read_csv("data/county_sum.csv").drop(columns="Unnamed: 0")
+  state_sum=pd.read_csv("data/state_sum.csv").set_index("STNAME")
+  us_trend_cases=pd.read_csv("data/us_trend_cases.csv").set_index("Region")
+  us_trend_deaths=pd.read_csv("data/us_trend_deaths.csv").set_index("Region")
+  us_newcases_cases=pd.read_csv("data/us_newcases_cases.csv").set_index("Region")
+  us_newcases_deaths=pd.read_csv("data/us_newcases_deaths.csv").set_index("Region")
+  state_newcases_cases=pd.read_csv("data/state_newcases_cases.csv").drop(columns="Unnamed: 0")
+  state_newcases_deaths=pd.read_csv("data/state_newcases_deaths.csv").drop(columns="Unnamed: 0")
 
 
 ################################################
@@ -191,8 +400,8 @@ conf = {'displayModeBar': False}
 #Reporting Area total cases
 
 def make_fig_2_3(d1,d2,text):
-  fig = go.Figure(go.Bar(y=countries_data.sort_values(by=[text], ascending=True).index[-15:],
-                          x=countries_data.sort_values(by=[text],ascending=True)[text][-15:],
+  fig = go.Figure(go.Bar(y=countries_data.sort_values(by=[text], ascending=True).index[-10:],
+                          x=countries_data.sort_values(by=[text],ascending=True)[text][-10:],
                          orientation='h'
                         )
                  )
@@ -254,8 +463,8 @@ def make_fig_5(d):
 
 #County total cases
 def make_fig_7_8(d, text):
-  fig = go.Figure(go.Bar(y=d.sort_values(by=[text], ascending=True).index[-15:],
-                          x=d.sort_values(by=[text],ascending=True)[text][-15:],
+  fig = go.Figure(go.Bar(y=d.sort_values(by=[text], ascending=True).index[-10:],
+                          x=d.sort_values(by=[text],ascending=True)[text][-10:],
                          orientation='h'
                         )
                  )
@@ -315,50 +524,6 @@ def make_fig_12_13(text):
                  )
   fig.update_layout(l_bar_s)
   return fig
-
-def make_fig_14(d1,d2,d3):
-  fig = go.Figure(data=[go.Bar(x=d1[d1["ReportingArea"]=="England"]["Specimen date"],
-                          y=d1[d1["ReportingArea"]=="England"]["Cumulative cases"],
-                          name="England"),
-                        go.Bar(x=d2.groupby("Specimen date").sum().index,
-                          y=d2.groupby("Specimen date").sum()["Cumulative cases"],
-                          name="Wales"),
-                        go.Bar(x=d3["Specimen date"],
-                          y=d3["Cumulative cases"],
-                          name="Scotland")]
-                        )
-  fig.update_layout(barmode='stack')
-  fig.update_layout(l_bar_s)
-  return fig
-
-def make_fig_15(d1,d2,d3):
-  fig = go.Figure(data=[go.Bar(x=d1[d1["ReportingArea"]=="England"]["Specimen date"],
-                          y=d1[d1["ReportingArea"]=="England"]["New cases"],
-                          name="England"),
-                        go.Bar(x=d2.groupby("Specimen date").sum().index,
-                          y=d2.groupby("Specimen date").sum()["New cases"],
-                          name="Wales"),
-                        go.Bar(x=d3["Specimen date"][1:],
-                          y=d3["Cumulative cases"][1:].values - d3["Cumulative cases"][:-1].values,
-                          name="Scotland")]
-                        )
-  fig.update_layout(barmode='stack')
-  fig.update_layout(l_bar_s)
-  return fig
-
-#RCHART
-def make_R_chart(k, size):
-    fig = go.Figure(go.Bar(y=k.iloc[:,-1].sort_values(ascending=True).index[-15:],
-                              x=k.iloc[:,-1].sort_values(ascending=True)[-15:],
-                             orientation='h',
-                           marker_color='salmon'
-                            )
-                     )
-    if size=="big":
-      fig.update_layout(l_bar_w)
-    else:
-      fig.update_layout(l_bar_s)
-    return fig
 
 
 
@@ -482,7 +647,6 @@ app.layout = html.Div([
           dcc.Graph(id='world-trend-cum',config=conf),
           ],
           className='row',
-          style={'marginbottom':'20%','paddingBottom': '5%'},
           ),
         ],
         className='row',
@@ -526,7 +690,7 @@ app.layout = html.Div([
           html.Div([#row for headers
             html.Div([# row for text and radio buttons separation
               html.Div([# eight columns for title text
-                html.P("Worst hit countries (as of {})".format(world_data_cases.columns[-1]), style={'font-size': '1.2rem'}),
+                html.P("Worst hit: Cumulative", style={'font-size': '1.2rem'}),
                 ],
                 className='eight columns'
                 ),
@@ -579,35 +743,28 @@ app.layout = html.Div([
             ),
           ],
           className='eight columns',
-          style={'padding':'1%','margin-bottom':'5%'}
+          style={'padding':'1%','margin-bottom':'0%'}
           ),
         html.Div([#four columns for R calculation
           html.Div([#chart title
-            html.P("Highest transmission rates",style={'font-size': '1.2rem'})
+            html.P("Worst hit: New cases",style={'font-size': '1.2rem'})
             ],
             className='row',
-            style={'paddingTop':'2%', 'paddingBottom':'2%'}
+            #style={'paddingTop':'2%', 'paddingBottom':'2%'}
             ),
           html.Div([#chart itself
-            html.P("Estimated R number*",style={'font-size': '1rem'}),
-            dcc.Graph(figure=make_R_chart(world_R, "small"), config=conf)
+            html.P("Total",style={'font-size': '1rem'}),
+            dcc.Graph(figure=make_fig_7_8(country_newcases_cases,df1.columns[-1]), config=conf)
             ],
             className='row'
             ),
           ],
           className='four columns',
-          style={'padding':'1%','margin-bottom':'5%'}
+          style={'padding':'1%','margin-bottom':'0%'}
           ),
         ],
         className='row',
-        style={'paddingTop':'2.5%', 'paddingBottom':'2.5%'}
-        ),
-      html.Div([#footnote
-        html.P('*number of people each new victim infects',
-          style={'font-size': '1rem','color':'#696969'}),
-        ],
-        className='row',
-        style={"paddingLeft":'2%'}
+        style={'paddingTop':'2.5%', 'paddingBottom':'0%'}
         ),
       ],
       className='six columns',
@@ -618,7 +775,7 @@ app.layout = html.Div([
     ),
   
 
-  ##BLOCK FOR HEATMAP AND COUNTRY TREND
+  ##BLOCK FOR COUNTRY COMPARISON
   html.Div([#row for header
     html.Div([
       html.H6('Select countries for comparison', 
@@ -649,43 +806,58 @@ app.layout = html.Div([
       ),
     ], 
     className='row flex-display', 
-    style={'padding':'1%', 'background-color':'#F5F5F5', 'border-radius': '5px','box-shadow': '2px 2px 2px lightgrey','margin':'1%'}
+    style={'padding':'1%', 'background-color':'#F5F5F5', 'border-radius': '5px','box-shadow': '2px 2px 2px lightgrey','margin':'2%'}
     ),
   html.Div([#row for body
-    html.Div([#six columns for line chart
-      html.H6(id="line-header",style = {'margin':0,'font-size':'1.5rem'}),
-      #html.P('Click on legend item to hide line', style={'color':'#696969','font-size': '1rem', 'font-style':'italic'}),
-      dcc.RadioItems(
-        id="uom",
-        options=[
-        {'label': 'Absolute', 'value': 'Abs'},
-        {'label': 'per 100k pop.', 'value': 'per100k'}],
-        value='per100k',
-        labelStyle={'display': 'inline-block'},
-        style={'font-size': '1rem'}),
+    html.Div([#six columns for cumulative cases
+      html.Div([
+        html.P(id="line-header",style = {'margin':0,'font-size':'1.2rem'}),
+        html.P('Click for detail', style={'color':'#696969','font-size': '1rem', 'font-style':'italic'}),
+        ], 
+        className='row'
+        ),
+      html.Div([
+        dcc.RadioItems(
+          id="uom",
+          options=[
+          {'label': 'Absolute', 'value': 'Abs'},
+          {'label': 'per 100k pop.', 'value': 'per100k'}],
+          value='per100k',
+          labelStyle={'display': 'inline-block'},
+          style={'font-size': '1rem', 'float': 'right', 'margin': '1%'}),
+        ], 
+        className='row'
+        ),
       dcc.Graph(id="countries-conf",config=conf,style={'margin':'0%','padding': '2%'}),
       ], 
       className='six columns',
-      style={'padding':'2%'}
+      style={'paddingRight':'2%','paddingLeft':'2%', 'paddingBottom': '4%'}
       ),
-    html.Div([#six columns for heatmap
-      html.H6(id="heatmap-header", style = {'font-size':'1.5rem'}),
-      #html.H6("new cases per 100k pop per day (7d rolling average)", style = {'font-size':'1rem'}),
-      dcc.RadioItems(
-        id="uom2",
-        options=[
-        {'label': 'Absolute', 'value': 'Abs'},
-        {'label': 'per 100k pop.', 'value': 'per100k'}],
-        value='per100k',
-        labelStyle={'display': 'inline-block'},
-        style={'font-size': '1rem'}),
+    html.Div([#six columns for new cases
+      html.Div([
+        html.P(id="heatmap-header", style = {'margin':0, 'font-size':'1.2rem'}),
+        html.P("Click for detail", style={'color':'#696969','font-size': '1rem', 'font-style':'italic'}),
+        ], 
+        className='row'
+        ),
+      html.Div([
+        dcc.RadioItems(
+          id="uom2",
+          options=[
+          {'label': 'Absolute', 'value': 'Abs'},
+          {'label': 'per 100k pop.', 'value': 'per100k'}],
+          value='per100k',
+          labelStyle={'display': 'inline-block'},
+          style={'font-size': '1rem', 'float': 'right', 'margin': '1%'}),
+        ], 
+        className='row'),
       dcc.Graph(id='heatmap',config=conf, style={'margin':'0%','padding': '2%'})
       ], 
-      className='six columns',style={'padding':'2%'}
+      className='six columns',
+      style={'paddingRight':'2%', 'paddingLeft':'2%','paddingBottom': '4%'}
       ),
     ],
     className='row flex-display',
-    style={'padding':'1%'},
     ),
   
   #BLOCK FOR US
@@ -831,7 +1003,7 @@ app.layout = html.Div([
         html.Div([#eight columns for worst hit
           html.Div([#row for titles
               html.Div([#eight columns for text
-                html.P("Worst hit states",style={'font-size': '1.2rem'}),
+                html.P("Worst hit: Cumulative",style={'font-size': '1.2rem'}),
                 ], 
                 className='eight columns'),
               html.Div([#four columns for radio buttons
@@ -870,33 +1042,26 @@ app.layout = html.Div([
               ),
           ],
           className='eight columns',
-          style={'padding':'1%','margin-bottom':'5%'}
+          style={'padding':'1%'}
           ),
         html.Div([#four columns for R calculation
           html.Div([#chart title
-            html.P("Highest transmission rates",style={'font-size': '1.2rem'})
+            html.P("Worst hit: New cases",style={'font-size': '1.2rem'})
             ],
             className='row'
             ),
           html.Div([#chart itself
-            html.P("Estimated R number*",style={'font-size': '1rem'}),
-            dcc.Graph(figure=make_R_chart(states_R, "small"), config=conf)
+            html.P("Total",style={'font-size': '1rem'}),
+            dcc.Graph(figure=make_fig_7_8(state_newcases_cases,df3.columns[-1]), config=conf)
             ],
             className='row'
             ),
           ],
           className='four columns',
-          style={'padding':'1%','margin-bottom':'5%'}
+          style={'padding':'1%'}
           ),
         ],
         className='row',
-        ),
-      html.Div([#footnote
-        html.P('*number of people each new victim infects',
-          style={'font-size': '1rem','color':'#696969'}),
-        ],
-        className='row',
-        style={"paddingLeft":'2%'}
         ),
       ],
       className='six columns',
@@ -905,229 +1070,7 @@ app.layout = html.Div([
     ],
     className='row'
     ),
-    
-  #BLOCK FOR UK
-  html.Div([#row for UK header
-    html.H5('United Kingdom as of {}'.format(pd.to_datetime(world_data_cases.columns[-1]).strftime('%B %d, %Y'))),       
-    html.P('Data source: Public Health England, Public Health Wales, Scottish Government. Local and national sub-totals are NHS only, and do not include results from testing by commercial partners.',style={'font-size': '1rem','color':'#696969'})
-    ], 
-    className='row', 
-    style={'marginbottom':'15px','padding':'1%'},
-    ),
-  html.Div([#row for UK body
-    html.Div([#LHS seven columns
-      html.Div([#row for title tiles
-        html.Div([#cases
-          html.P('Cases:', 
-            style={'color':'#696969', 'font-size': '1rem'}
-            ),
-          html.P('{}'.format(f'{world_data_cases[world_data_cases.columns[-1]]["United Kingdom"]:,}'), 
-            style={'font-size': '1.5rem'}
-            )
-          ],
-          className='four columns',
-          style={'background-color':'#F5F5F5','padding':'1%', 'border-radius': '5px','box-shadow': '2px 2px 2px lightgrey','margin':'0.5%'}
-          ),
-        html.Div([#deaths
-        html.P('Deaths:', 
-          style={'color':'#696969','font-size': '1rem'}
-          ),
-        html.P('{}'.format(f'{world_data_deaths[world_data_deaths.columns[-1]]["United Kingdom"]:,}'), 
-          style={'font-size': '1.5rem'}
-          )
-        ],
-        className='four columns',
-        style={'background-color':'#F5F5F5','padding':'1%', 'border-radius': '5px','box-shadow': '2px 2px 2px lightgrey','margin':'0.5%'}
-        ),
-        html.Div([#mortality
-        html.P('Avg mortality:', 
-          style={'color':'#696969','font-size': '1rem'}
-          ),
-        html.P('{} % '.format(round(100*world_data_deaths[world_data_deaths.columns[-1]]["United Kingdom"]/world_data_cases[world_data_cases.columns[-1]]["United Kingdom"],2)), 
-          style={'font-size': '1.5rem'}
-          )
-        ], 
-        className='four columns',
-        style={'background-color':'#F5F5F5','padding':'1%','border-radius': '5px','box-shadow': '2px 2px 2px lightgrey','margin':'0.5%'}
-        ),
-        ],
-        className='row',
-        ),
-      html.Div([#row for map
-      html.Div([# row for map titles
-        html.Div([#title text eight columns
-          html.H6('Spread by location (excl. Northern Ireland)',
-            style = {'margin-bottom':'0', 'paddingBottom':'0','font-size': '1.5rem'}),
-          html.P('Click for detail',
-            style={'color':'#696969','font-size': '1rem', 'font-style':'italic'}),
-          ],
-          className='eight columns'
-          ),
-        html.Div([#radio items four columns
-          dcc.RadioItems(
-            id="uom-uk-map",
-            options=[
-            {'label': 'Absolute', 'value': 'Abs'},
-            {'label': 'per 100k pop.', 'value': 'per100k'}],
-            value='Abs',
-            labelStyle={'display': 'inline-block'},
-            style={'font-size': '1rem','float':'right'}
-            ),
-          ], 
-          className='four columns'
-          ),
-        ], 
-        className='row',
-        ),
-      html.Div([# row for map itself
-        dcc.Graph(id= "UK map",config=conf,)
-        ],
-        className='row',
-        style={'padding':'1%'}
-        ),
-      ],
-      className='row',
-      style={'padding':'1%'}
-      ),
-      ],
-      className='six columns',
-      style={'padding':'1%'},
-      ),
-    html.Div([#five columns for RHS
-      html.Div([#row for cumulative cases
-        html.Div([#row for titles
-        html.Div([#eight columns for title text
-          html.P(id='uk-cum-title',
-            style={'margin':0,'font-size': '1.2rem'}),
-          html.P('Click on legend item to zoom in', 
-            style={'color':'#696969','font-size': '1rem', 'font-style':'italic'}),
-          ],
-          className='eight columns'),
-        html.Div([#four columns for radio buttons
-          dcc.RadioItems(
-              id="uk-cum",
-              options=[
-              {'label':  'Cases', 'value': 'Cases'},
-              {'label': 'Deaths', 'value': 'Deaths'}],
-              value='Cases',
-              labelStyle={'display': 'inline-block'},
-              style={'font-size': '1rem','float':'right'},
-            )
-          ],
-          className='four columns'
-          ),
-        ],
-        className='row'
-        ),
-        html.Div([#row for dcc cum chart
-        dcc.Graph(id='uk-trend-total',config=conf, 
-        )
-        ],
-        className='row'
-        ),
-        ], 
-        className='row',
-        style={'margin-bottom':'4%'}
-        ),
-      html.Div([#row for new cases
-        html.Div([#row for titles
-          html.Div([#eight columns for title text
-            html.P(id='uk-new-title',
-                style={'margin':0,'font-size': '1.2rem'}),
-            html.P('Click on legend item to zoom in', style={'color':'#696969','font-size': '1rem', 'font-style':'italic'}),
-            ], 
-            className="eight columns"
-            ),
-          html.Div([#four columns for title radio buttons
-            dcc.RadioItems(
-              id="uk-new",
-              options=[
-              {'label':  'Cases', 'value': 'Cases'},
-              {'label': 'Deaths', 'value': 'Deaths'}],
-              value='Cases',
-              labelStyle={'display': 'inline-block'},
-              style={'font-size': '1rem','float':'right'},
-            )
-            ],
-            className="four columns"
-            ),
-          ],
-          className='row'
-          ),
-        html.Div([#row for new cases dcc chart
-          dcc.Graph(id='uk-trend-new',config=conf)
-          ],
-          className='row',
-          style={'margin-top':'5%', 'margin-bottom':'5%'}
-          ),
-        ],
-        className='row'
-        ),
-      html.Div([#row for bar charts
-        html.Div([#eight columns for worst hit
-          html.Div([#row for titles
-              html.Div([#eight columns for text
-                html.P("Regions",style={'font-size': '1.2rem'}),
-                ], 
-                className='eight columns'),
-              ],
-              className='row'
-              ),
-          html.Div([#row for charts
-            html.Div([#six columns for total
-                html.P('Total',
-                  style={'font-size': '1rem'}),
-                dcc.Graph(figure=make_fig_12_13("Cumulative cases"),config=conf),
-                ], 
-                className="six columns"
-                ),
-            html.Div([#six columns for per 100k
-                html.P('per 100k pop.',
-                  style={'font-size': '1rem'}),
-                dcc.Graph(figure=make_fig_12_13("Conf100"),config=conf)
-                ],
-                className='six columns'
-                ),      
-              ],
-              className='row'
-              ),
-          ],
-          className='eight columns',
-          style={'padding':'1%','margin-bottom':'5%'}
-          ),
-        html.Div([#four columns for R calculation
-          html.Div([#chart title
-            html.P("Transmission rate",style={'font-size': '1.2rem'})
-            ],
-            className='row'
-            ),
-          html.Div([#chart itself
-            html.P("Estimated R number*",style={'font-size': '1rem'}),
-            dcc.Graph(figure=make_R_chart(uk_R, "small"), config=conf)
-            ],
-            className='row'
-            ),
-          ],
-          className='four columns',
-          style={'padding':'1%','margin-bottom':'5%'}
-          ),
-        ],
-        className='row',
-        ),
-      html.Div([#footnote
-        html.P('*number of people each new victim infects',
-          style={'font-size': '1rem','color':'#696969'}),
-        ],
-        className='row',
-        style={"paddingLeft":'2%'}
-        ),
-      ],
-      className='six columns',
-      style={'paddingLeft': '1%','paddingRight':'0.5%'}
-      ),
-    ],
-    className='row'
-    ),
+
 
 ],
 )
@@ -1144,10 +1087,10 @@ app.layout = html.Div([
   [Input('uom-ww-map', 'value')])
 def update_chart(units):
   if units == 'per100k':
-    s= 0.5*countries_data["Conf100"]
+    s= 0.1*countries_data["Conf100"]
     t=countries_data['text100']
   else:
-    s=0.003*countries_data["Confirmed"]
+    s=0.001*countries_data["Confirmed"]
     t=countries_data['text']
   d = go.Figure(go.Scattergeo(
     lon=countries_data["longitude"],
@@ -1328,9 +1271,9 @@ def update_chart(selection, trend, uom):
 
 def update_header(trend):
   if trend=="Cases":
-    return "New Cases (7d rolling avg)"
+    return "New Cases (7 day rolling average)"
   else:
-    return "New Deaths (7d rolling avg)"
+    return "New Deaths (7 day rolling avg)"
 
 @app.callback(
     Output('heatmap', 'figure'),
@@ -1422,10 +1365,10 @@ def update_chart(selection, trend, uom):
   [Input('uom-us-map', 'value')])
 def update_chart(units):
   if units=='per100k':
-    s = 0.1*county_sum['Conf100']
+    s = 0.05*county_sum['Conf100']
     t = county_sum['text100']
   else:
-    s = 0.05*(county_sum['Confirmed'])
+    s = 0.02*(county_sum['Confirmed'])
     t = county_sum['text']
   d= go.Scattergeo(
         lon = county_sum['Long_'],
@@ -1508,83 +1451,6 @@ def update_chart(trend):
     return make_fig_7_8(state_sum,"Conf100")
   else:
     return make_fig_7_8(state_sum,"Deaths100")
-
-#Callback for UK map UoM
-@app.callback(
-  Output('UK map', 'figure'),
-  [Input('uom-uk-map', 'value')])
-def update_chart(units):
-  if units == "Abs":
-    s = 0.05*uk_scatter['Confirmed']
-    t = uk_scatter['text']
-  else:
-    s = 0.2*uk_scatter['Conf100']
-    t = uk_scatter['text100']
-  d=go.Scattermapbox(
-    lon = uk_scatter['long'],
-    lat = uk_scatter['lat'],
-    text = t,
-    hoverinfo = 'text',
-    marker = dict(
-            size = s,
-            sizemode = 'area',
-        symbol = 'circle'
-        ))
-  fig11=go.Figure(data=d)
-  fig11.update_layout(l_mapbox)
-  return fig11
-
-#Callbacks for RHS UK charts
-
-@app.callback(
-  Output('uk-trend-total', 'figure'),
-  [Input('uk-cum', 'value')])
-
-def update_chart(trend):
-  if trend == 'Cases':
-    return make_fig_14(eng_trend, wales_trend, scot_trend)
-  else:
-    fig = go.Figure(data=go.Bar(x=pd.to_datetime(world_data_deaths.columns),
-                            y=world_data_deaths[world_data_deaths.index=="United Kingdom"].values[0]),
-                          )
-    fig.update_layout(barmode='stack')
-    fig.update_layout(l_bar_s)
-    return fig
-
-@app.callback(
-  Output('uk-cum-title', 'children'),
-  [Input('uk-cum', 'value')])
-
-def update_chart(trend):
-  if trend == 'Cases':
-    return "Cumulative cases (excl. Northern Ireland)"
-  else:
-    return "Cumulative deaths"
-
-@app.callback(
-  Output('uk-trend-new', 'figure'),
-  [Input('uk-new', 'value')])
-
-def update_chart(trend):
-  if trend == 'Cases':
-    return make_fig_15(eng_trend, wales_trend, scot_trend)
-  else:
-    fig = go.Figure(data=go.Bar(x=pd.to_datetime(world_data_deaths.columns[:-1]),
-                          y=world_data_deaths[world_data_deaths.index=="United Kingdom"].values[0][1:]-world_data_deaths[world_data_deaths.index=="United Kingdom"].values[0][:-1]),
-                        )
-    fig.update_layout(barmode='stack')
-    fig.update_layout(l_bar_s)
-    return fig
-
-@app.callback(
-  Output('uk-new-title', 'children'),
-  [Input('uk-new', 'value')])
-
-def update_chart(trend):
-  if trend == 'Cases':
-    return "New cases (excl. Northern Ireland)"
-  else:
-    return "New deaths"
 
 if __name__ == '__main__':
   app.run_server()

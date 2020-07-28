@@ -17,4 +17,3 @@ The following are screenshots for the app in this repo:
 
 ![Dash3](screenshots/Dash3.png)
 
-![Dash4](screenshots/Dash4.png)
