@@ -1,4 +1,4 @@
-### https://covid-ww.herokuapp.com/
+COVID-19: An interactive dashboard in Python
 
 Interactive dashboard built and deployed by me to track the spread of COVID-19
 
