@@ -7,6 +7,5 @@ covid-ww.herokuapp.com
 
 ## Sample screenshots
 
-**Correlation heatmap**
 ![pic01](assets/screenshot.png)
 
